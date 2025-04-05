@@ -1,0 +1,36 @@
+{
+  "tokens": {},
+  "styles": {
+    "FONT_NORMAL": [
+      "Arial",
+      11
+    ],
+    "UP_COLOR": "#00FF7F",
+    "DOWN_COLOR": "#FF4500",
+    "TEXT_COLOR": "#FFD700",
+    "EXTREME_FEAR_COLOR": "#FF0000",
+    "FEAR_COLOR": "#FF7F00",
+    "NEUTRAL_COLOR": "#FFFF00",
+    "GREED_COLOR": "#7FFF00",
+    "EXTREME_GREED_COLOR": "#00FF00"
+  },
+  "window": {
+    "update_interval": 60
+  },
+  "api": {
+    "coinmarketcap": {
+      "enabled": true,
+      "base_url": "https://pro-api.coinmarketcap.com/v3",
+      "endpoints": {
+        "fear_greed": "/fear-and-greed/historical"
+      },
+      "params": {
+        "fear_greed": {
+          "start": 1,
+          "limit": 1
+        }
+      },
+      "update_interval": 3600
+    }
+  }
+}

@@ -1,0 +1,14 @@
+# 基础HTTP请求库
+requests>=2.31.0
+
+# GUI框架
+PySide6>=6.6.0
+
+# 环境变量管理
+python-dotenv>=1.0.0
+
+# 日期时间处理
+python-dateutil>=2.8.2
+
+# Windows特定依赖（仅Windows系统需要）
+pywin32>=306; sys_platform == 'win32' 

@@ -1,0 +1,48 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environment
+venv/
+.venv/
+env/
+ENV/
+# *.env # We removed this overly broad rule, relying on the specific .env below
+
+# Build artifacts
+build/
+dist/
+*.spec
+upx/ # Ignoring the UPX directory and its contents
+
+# Distribution / packaging
+*.egg-info/
+*.egg
+*.exe
+
+# Sensitive files
+.env
+
+# IDE / Editor specific files
+.vscode/
+.idea/
+.cursor/
+*.swp
+*.swo
+.cursorignore
+
+# Log files (Generated outside the repo in AppData, so usually not needed here)
+logs/
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Other specific files from your listing (optional, but good to ignore if they are local/generated)
+# settings.json
+# BeraTracker.manifest
+# version_info.txt
+# bootstrap.py
+# runtime_hook.py
+# user_tokens.json # This should definitely be ignored if it appears in the project dir 
