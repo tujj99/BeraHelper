@@ -14,12 +14,13 @@ ENV/
 build/
 dist/
 *.spec
-upx/ # Ignoring the UPX directory and its contents
+upx/
 
 # Distribution / packaging
 *.egg-info/
 *.egg
 *.exe
+.zip
 
 # Sensitive files
 .env
