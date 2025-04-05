@@ -56,7 +56,7 @@ def setup_logger():
                 appdata = os.getenv('LOCALAPPDATA') # 使用 LOCALAPPDATA 存储日志更合适
                 if appdata:
                     log_dir_base = os.path.join(appdata, 'BeraHelper', 'logs')
-                    logging.info(f"日志目录将使用 LOCALAPPDATA: {log_dir_base}")
+                    logging.info(f"Log directory will use LOCALAPPDATA: {log_dir_base}") # Changed to English
 
             # --- 改动：如果获取 %LOCALAPPDATA% 失败或非 Windows，则回退 ---
             if not log_dir_base:
@@ -66,12 +66,12 @@ def setup_logger():
                 else: # 开发环境 (.py)
                     exe_dir = os.path.dirname(os.path.abspath(__file__))
                 log_dir_base = os.path.join(exe_dir, 'logs')
-                logging.warning(f"无法获取 LOCALAPPDATA 或非 Windows，日志目录回退至: {log_dir_base}")
+                logging.warning(f"Cannot get LOCALAPPDATA or not Windows, log directory fallback to: {log_dir_base}") # Changed to English
 
             # 创建日志目录（如果不存在）
             if not os.path.exists(log_dir_base):
                 os.makedirs(log_dir_base, exist_ok=True) # exist_ok=True 避免目录已存在时报错
-                logging.info(f"已创建日志目录: {log_dir_base}")
+                logging.info(f"Created log directory: {log_dir_base}") # Changed to English
 
             # 获取当前时间作为日志文件名
             current_time = datetime.now().strftime('%Y%m%d_%H%M%S')
@@ -108,16 +108,16 @@ def setup_logger():
             logging.getLogger('urllib3').setLevel(logging.WARNING)  # 设置HTTP请求库的日志级别
             logging.getLogger('requests').setLevel(logging.WARNING) # 设置请求库的日志级别
 
-            logging.info('日志系统初始化完成')
-            logging.info(f'日志文件实际路径: {log_file}')
+            logging.info('Logging system initialized successfully') # Changed to English
+            logging.info(f'Actual log file path: {log_file}') # Changed to English
             
             # --- 删除: 测试警告消息、强制刷新和 atexit 机制 ---
 
         except Exception as log_setup_error:
             # 如果文件日志配置失败，提供基本的控制台日志作为后备
             logging.basicConfig(level=logging.ERROR) # 重新配置，至少保证 ERROR 级别能输出
-            logging.critical(f"!!! 无法配置基于文件的日志系统: {log_setup_error}")
-            logging.critical("!!! 日志将仅输出到控制台/stderr")
+            logging.critical(f"!!! Unable to configure file-based logging system: {log_setup_error}") # Changed to English
+            logging.critical("!!! Logs will only be output to console/stderr") # Changed to English
 
     except Exception as outer_e:
         # 捕获 setup_logger 内部未能捕获的任何意外错误
@@ -135,7 +135,7 @@ def resource_path(relative_path):
     try:
         # PyInstaller创建临时文件夹，将路径存储在_MEIPASS中
         base_path = sys._MEIPASS  # 尝试获取PyInstaller打包后的临时文件夹路径
-        logging.debug(f"使用PyInstaller路径: {base_path}")
+        logging.debug(f"Using PyInstaller path: {base_path}") # Changed to English
     except Exception:
         # 如果不是打包环境，尝试多种可能的路径
         # 1. 当前文件所在目录
@@ -147,10 +147,10 @@ def resource_path(relative_path):
                 # 3. 可执行文件所在目录
                 base_path = os.path.dirname(os.path.abspath(sys.argv[0]))
                 
-        logging.debug(f"使用非打包环境路径: {base_path}")
+        logging.debug(f"Using non-packaged environment path: {base_path}") # Changed to English
     
     result_path = os.path.join(base_path, relative_path)
-    logging.debug(f"资源路径解析: {relative_path} -> {result_path}")
+    logging.debug(f"Resource path resolved: {relative_path} -> {result_path}") # Changed to English
     return result_path  # 返回资源的绝对路径
 
 # ===================================
@@ -194,7 +194,7 @@ class CryptoPriceWidget(QWidget):
             self.price.setText(price)  # 更新价格标签文本
             
             # 如果价格是"加载中..."或"获取失败"等特殊状态，则不显示变化率
-            if price in ["加载中...", "获取失败", "$--.--"]:
+            if price in ["Loading...", "Fetch Failed", "$--.--"]: # Changed to English
                 self.change.setText("")
                 self.change.setStyleSheet("")
             else:
@@ -236,14 +236,14 @@ class BeraHelperApp(QMainWindow):
                         logging.info(f"Skipped SetCurrentProcessExplicitAppUserModelID.") # <--- 修改日志
                     except Exception as e:
                         logging.error(f"ERROR during SetCurrentProcessExplicitAppUserModelID (skipped but logged): {e}") # <--- 修改日志
-                        logging.error(f'设置任务栏图标ID时发生错误 (即使已跳过): {e}')
+                        logging.error(f'Error setting taskbar icon ID (even though skipped): {e}') # Changed to English
                 logging.info(f"App icon setup logic completed (taskbar ID skipped). Path: {icon_path}") # <--- 修改日志
             except Exception as icon_load_err:
                  logging.error(f"ERROR loading or setting icon: {icon_load_err}")
-                 logging.error(f"加载或设置图标时出错: {icon_load_err}")
+                 logging.error(f"Error loading or setting icon: {icon_load_err}") # Changed to English
         else:
             logging.warning(f"Icon file does NOT exist: {icon_path}") # <--- 修改日志
-            logging.warning(f'图标文件不存在: {icon_path}')
+            logging.warning(f'Icon file does not exist: {icon_path}') # Changed to English
 
         logging.info("Icon setup attempted section finished.") # <--- 修改原检查点日志内容
 
@@ -273,9 +273,9 @@ class BeraHelperApp(QMainWindow):
         self.update_pin_button_status()  # 更新置顶按钮状态
         
         # --- 修改：立即显示加载中，并在后台启动首次获取 ---
-        logging.info("UI 初始化完成，准备后台获取首次数据")
+        logging.info("UI initialized, preparing to fetch initial data in the background") # Changed to English
         for token_id, widget in self.token_widgets.items():
-            widget.update_price("加载中...", "") # 立即显示加载状态
+            widget.update_price("Loading...", "") # 立即显示加载状态
 
         # 启动后台线程执行首次数据获取
         # 使用 QTimer 稍微延迟启动线程，确保主窗口已显示
@@ -283,13 +283,13 @@ class BeraHelperApp(QMainWindow):
     
     def start_initial_fetch_thread(self):
         """启动一个后台线程来执行首次数据获取"""
-        logging.info("启动首次数据获取线程...")
+        logging.info("Starting initial data fetch thread...") # Changed to English
         initial_fetch_thread = Thread(target=self._initial_fetch_thread, daemon=True)
         initial_fetch_thread.start()
 
     def _initial_fetch_thread(self):
         """在后台线程中执行首次数据获取"""
-        logging.info("首次数据获取线程开始执行...")
+        logging.info("Initial data fetch thread started execution...") # Changed to English
         price_data = None
         fear_greed_data = None
         current_time = datetime.now().strftime("%H:%M:%S")
@@ -300,10 +300,10 @@ class BeraHelperApp(QMainWindow):
             # 获取恐惧贪婪指数
             fear_greed_data = self.get_fear_greed_index(force_update=True) # 强制更新
 
-            logging.info("首次数据获取线程完成")
+            logging.info("Initial data fetch thread completed") # Changed to English
 
         except Exception as e:
-            logging.error(f"首次数据获取线程失败: {e}")
+            logging.error(f"Initial data fetch thread failed: {e}") # Changed to English
             import traceback
             logging.error(traceback.format_exc())
             # 即使失败，也发送信号，让主线程知道
@@ -314,21 +314,21 @@ class BeraHelperApp(QMainWindow):
     @Slot(object, object, str)
     def handle_initial_data(self, price_data, fear_greed_data, current_time):
         """处理后台线程返回的首次数据，更新UI并启动定时器"""
-        logging.info("接收到首次数据，准备更新 UI 并启动定时器")
+        logging.info("Received initial data, preparing to update UI and start timer") # Changed to English
         self.price_data = price_data
         self.fear_greed_data = fear_greed_data
         self.current_time = current_time
 
         # 检查获取的数据是否有效
         if self.price_data is None or not self.price_data:
-             logging.warning("首次获取的价格数据无效或为空，部分UI可能显示错误状态")
+             logging.warning("Initial price data is invalid or empty, some UI might show error status") # Changed to English
              # 可以选择在这里为所有 widget 设置错误状态
              for token_id, widget in self.token_widgets.items():
                  if not self.price_data or token_id not in self.price_data:
-                      widget.update_price("获取失败", "--.--%")
+                      widget.update_price("Fetch Failed", "--.--%")
 
         if self.fear_greed_data is None:
-             logging.warning("首次获取的恐惧贪婪指数数据无效")
+             logging.warning("Initial Fear & Greed index data is invalid") # Changed to English
              # UI 更新时会自动处理 None 的情况
 
         # 更新 UI (会使用 self.price_data 和 self.fear_greed_data)
@@ -336,7 +336,7 @@ class BeraHelperApp(QMainWindow):
 
         # --- 在首次数据获取完成后再启动定时器 ---
         self.timer.start(self.update_interval * 1000)
-        logging.info(f"首次数据显示完成，定时更新已启动，间隔: {self.update_interval}秒")
+        logging.info(f"Initial data display complete, update timer started, interval: {self.update_interval} seconds") # Changed to English
 
     def init_variables(self):
         """初始化变量和状态"""
@@ -377,10 +377,10 @@ class BeraHelperApp(QMainWindow):
         """加载配置文件，设置应用参数 (所有代币均可切换显示模式)"""
         try:
             config_path = resource_path('bera_helper_config.json')
-            logging.info(f'正在加载配置文件: {config_path}')
+            logging.info(f'Loading configuration file: {config_path}') # Changed to English
             config = {} # 初始化为空字典
             if not os.path.exists(config_path):
-                 logging.warning(f"配置文件不存在: {config_path}。将使用并创建默认配置。")
+                 logging.warning(f"Configuration file not found: {config_path}. Will use and create default configuration.") # Changed to English
                  # 定义基础的默认配置结构
                  config = {
                      # tokens部分会在后面填充默认值
@@ -426,26 +426,26 @@ class BeraHelperApp(QMainWindow):
                  try:
                      with open(config_path, 'w', encoding='utf-8') as f_default:
                          json.dump(config, f_default, indent=2)
-                     logging.info(f"已创建基础配置文件: {config_path}")
+                     logging.info(f"Created basic configuration file: {config_path}") # Changed to English
                  except Exception as create_err:
-                     logging.error(f"创建默认配置文件失败: {create_err}，将继续使用内存中的默认配置。")
+                     logging.error(f"Failed to create default configuration file: {create_err}, will continue using default configuration in memory.") # Changed to English
             else:
                  # 文件存在，正常加载
                  try:
                      with open(config_path, 'r', encoding='utf-8') as f:
                         config = json.load(f)
                  except json.JSONDecodeError as e:
-                     logging.error(f"配置文件 {config_path} 格式错误: {e}。将使用默认配置。")
+                     logging.error(f"Configuration file {config_path} format error: {e}. Will use default configuration.") # Changed to English
                      # 保留上面定义的默认 config 结构
                  except Exception as load_err:
-                     logging.error(f"加载配置文件时发生错误: {load_err}。将使用默认配置。")
+                     logging.error(f"Error loading configuration file: {load_err}. Will use default configuration.") # Changed to English
                      # 保留上面定义的默认 config 结构
 
             # --- 字体设置 ---
             styles_config = config.get('styles', {})
             font_config = styles_config.get('FONT_NORMAL', ['Arial', 11])
             self.app_font = QFont(font_config[0], font_config[1])
-            logging.debug(f'配置的字体: {font_config[0]}, 大小: {font_config[1]}')
+            logging.debug(f'Configured font: {font_config[0]}, size: {font_config[1]}') # Changed to English
 
             # --- 代币ID配置 (从配置文件加载，提供默认值) ---
             tokens_config = config.get('tokens', {})
@@ -478,7 +478,7 @@ class BeraHelperApp(QMainWindow):
             try:
                 user_data_dir = self.get_user_data_dir()
                 user_tokens_path = os.path.join(user_data_dir, 'user_tokens.json')
-                logging.info(f'尝试加载用户代币设置: {user_tokens_path}')
+                logging.info(f'Attempting to load user token settings: {user_tokens_path}')
 
                 if os.path.exists(user_tokens_path):
                     with open(user_tokens_path, 'r', encoding='utf-8') as f:
@@ -502,27 +502,27 @@ class BeraHelperApp(QMainWindow):
                                     token_data["display_as_bera_ratio"] = False
                                 self.user_tokens.append(token_data)
                                 processed_ids.add(token_data["id"])
-                            else: logging.warning(f"Skipping invalid/duplicate token data: {token_data}")
+                            else: logging.warning(f"Skipping invalid/duplicate token data: {token_data}") # Changed to English
 
                         if self.user_tokens:
-                             logging.info(f'已加载用户代币设置: {len(self.user_tokens)} 个代币')
+                             logging.info(f'Loaded user token settings: {len(self.user_tokens)} tokens') # Changed to English
                              user_tokens_loaded = True
-                             for token in self.user_tokens: logging.debug(f'  加载: {token.get("symbol", "?")} ({token.get("id", "?ID")}), Ratio: {token.get("display_as_bera_ratio")}') # 明确显示布尔值
-                        else: logging.warning("User token list is empty after processing.")
+                             for token in self.user_tokens: logging.debug(f'  Loaded: {token.get("symbol", "?")} ({token.get("id", "?ID")}), Ratio: {token.get("display_as_bera_ratio")}') # Changed to English
+                        else: logging.warning("User token list is empty after processing.") # Changed to English
                 else:
-                    logging.warning(f'用户代币配置文件不存在: {user_tokens_path}. 将首次使用默认代币.')
+                    logging.warning(f'User token configuration file not found: {user_tokens_path}. Will use default tokens for the first time.') # Changed to English
 
-            except json.JSONDecodeError as e: logging.error(f'解析 user_tokens.json 失败: {e}.')
+            except json.JSONDecodeError as e: logging.error(f'Failed to parse user_tokens.json: {e}.') # Changed to English
             except Exception as e:
-                logging.error(f'加载用户代币设置时发生错误: {e}.')
+                logging.error(f'Error loading user token settings: {e}.') # Changed to English
                 import traceback; logging.error(traceback.format_exc())
 
             if not user_tokens_loaded:
-                logging.info('使用默认代币列表。')
+                logging.info('Using default token list.') # Changed to English
                 self.user_tokens = default_tokens_with_flags # 使用带 False 标志的默认列表
                 if user_tokens_path and not os.path.exists(user_tokens_path):
                     try: self.save_user_tokens()
-                    except Exception as save_e: logging.error(f"首次保存默认代币列表失败: {save_e}")
+                    except Exception as save_e: logging.error(f"Failed to save default token list for the first time: {save_e}") # Changed to English
 
             # --- 加载其他配置 (保持不变) ---
             self.load_available_tokens()
@@ -537,28 +537,28 @@ class BeraHelperApp(QMainWindow):
             self.greed_color = QColor(styles_config.get('GREED_COLOR', "#7FFF00"))
             self.extreme_greed_color = QColor(styles_config.get('EXTREME_GREED_COLOR', "#00FF00"))
 
-            logging.info('配置加载完成')
+            logging.info('Configuration loading complete') # Changed to English
 
         except Exception as e:
             # --- 极端情况下的硬编码默认值 (保持不变) ---
-            logging.error(f'!!! 配置文件加载/创建过程中发生严重错误: {e}')
+            logging.error(f'!!! Critical error during configuration file loading/creation: {e}') # Changed to English
             import traceback; logging.error(traceback.format_exc())
-            logging.warning("将使用硬编码的程序默认值！")
+            logging.warning("Will use hardcoded program defaults!") # Changed to English
             # ... (保持之前的硬编码默认值设置) ...
             self.app_font = QFont('Arial', 11); self.BERA_ID = "berachain-bera"; self.IBGT_ID = "infrafred-bgt"; self.BTC_ID = "bitcoin"; self.ETH_ID = "ethereum"; self.update_interval = 60; self.api_config = {"coinmarketcap": {"enabled": True, "base_url": "https://pro-api.coinmarketcap.com/v3", "endpoints": {"fear_greed": "/fear-and-greed/historical"}, "params": {"fear_greed": {"start": 1, "limit": 1}}, "update_interval": 3600}}; self.up_color = QColor("#00FF7F"); self.down_color = QColor("#FF4500"); self.text_color = QColor("#FFD700"); self.extreme_fear_color = QColor("#FF0000"); self.fear_color = QColor("#FF7F00"); self.neutral_color = QColor("#FFFF00"); self.greed_color = QColor("#7FFF00"); self.extreme_greed_color = QColor("#00FF00")
             # 极端默认列表，全都不显示比率
             self.user_tokens = [ {"id": self.BTC_ID, "symbol": "BTC", "name": "Bitcoin", "display_as_bera_ratio": False}, {"id": self.ETH_ID, "symbol": "ETH", "name": "Ethereum", "display_as_bera_ratio": False}, {"id": self.BERA_ID, "symbol": "BERA", "name": "Berachain", "display_as_bera_ratio": False}, {"id": self.IBGT_ID, "symbol": "IBGT", "name": "Infrafred", "display_as_bera_ratio": False}, ]
             self.available_tokens = []
             try: self.load_available_tokens()
-            except Exception as load_list_e: logging.error(f"紧急默认设置下加载可用代币列表失败: {load_list_e}")
+            except Exception as load_list_e: logging.error(f"Failed to load available token list under emergency default settings: {load_list_e}") # Changed to English
 
     def load_available_tokens(self):
         """加载可用的代币列表，并检查是否需要更新"""
         try:
             # 获取代币列表文件路径
             tokens_path = resource_path('coingecko.list')
-            logging.info(f'尝试加载代币列表文件: {tokens_path}')
-            
+            logging.info(f'Attempting to load token list file: {tokens_path}') # Changed to English
+
             # 检查文件是否存在
             if os.path.exists(tokens_path):
                 try:
@@ -566,33 +566,33 @@ class BeraHelperApp(QMainWindow):
                     file_mod_time = datetime.fromtimestamp(os.path.getmtime(tokens_path))
                     now = datetime.now()
                     days_since_update = (now - file_mod_time).days
-                    
+
                     with open(tokens_path, 'r', encoding='utf-8') as f:
                         self.available_tokens = json.load(f)
-                        
-                    logging.info(f'已加载可用代币列表: {len(self.available_tokens)}个代币')
-                    
+
+                    logging.info(f'Loaded available token list: {len(self.available_tokens)} tokens') # Changed to English
+
                     # 如果列表文件超过30天未更新，弹出提示
                     if days_since_update > 30:
                         from PySide6.QtWidgets import QMessageBox
                         update_msg = QMessageBox(self)
                         update_msg.setIcon(QMessageBox.Information)
-                        update_msg.setText(f"代币列表已有{days_since_update}天未更新。\n是否现在更新？")
-                        update_msg.setWindowTitle("代币列表更新")
+                        update_msg.setText(f"Token list hasn't been updated for {days_since_update} days.\nUpdate now?") # Changed to English
+                        update_msg.setWindowTitle("Token List Update") # Changed to English
                         update_msg.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
                         if update_msg.exec() == QMessageBox.Yes:
                             QTimer.singleShot(1000, self.check_token_list_updates)
-                    
+
                 except Exception as e:
-                    logging.error(f'读取代币列表文件时出错: {e}')
+                    logging.error(f'Error reading token list file: {e}') # Changed to English
                     self.available_tokens = self.user_tokens.copy()
             else:
                 # 文件不存在，直接触发下载
-                logging.warning(f'代币列表文件不存在: {tokens_path}')
+                logging.warning(f'Token list file does not exist: {tokens_path}') # Changed to English
                 QTimer.singleShot(1000, self.check_token_list_updates)
                 self.available_tokens = self.user_tokens.copy()
         except Exception as e:
-            logging.error(f'加载代币列表失败: {e}')
+            logging.error(f'Failed to load token list: {e}') # Changed to English
             self.available_tokens = self.user_tokens.copy()
     
     def save_user_tokens(self):
@@ -612,22 +612,22 @@ class BeraHelperApp(QMainWindow):
             with open(user_tokens_path, 'w', encoding='utf-8') as f:
                 json.dump(self.user_tokens, f, ensure_ascii=False, indent=2)
             
-            logging.info(f'已保存用户代币设置到: {user_tokens_path}')
-            logging.debug(f'保存的代币数量: {len(self.user_tokens)}')
+            logging.info(f'Saved user token settings to: {user_tokens_path}') # Changed to English
+            logging.debug(f'Number of tokens saved: {len(self.user_tokens)}') # Changed to English
             
             # 验证保存结果
             if os.path.exists(user_tokens_path):
                 try:
                     with open(user_tokens_path, 'r', encoding='utf-8') as f:
                         saved_data = json.load(f)
-                    logging.debug(f'验证保存: 文件中的代币数量 {len(saved_data)}')
+                    logging.debug(f'Verification: Number of tokens in file {len(saved_data)}') # Changed to English
                 except Exception as e:
-                    logging.error(f'验证保存失败: {e}')
+                    logging.error(f'Verification failed: {e}') # Changed to English
             else:
-                logging.error(f'保存失败: 文件不存在 {user_tokens_path}')
+                logging.error(f'Save failed: File does not exist {user_tokens_path}') # Changed to English
                 
         except Exception as e:
-            logging.error(f'保存用户代币设置失败: {e}')
+            logging.error(f'Failed to save user token settings: {e}') # Changed to English
     
     def get_user_data_dir(self):
         """获取用户数据目录，确保所有相关函数使用相同的路径"""
@@ -668,13 +668,13 @@ class BeraHelperApp(QMainWindow):
         # 置顶按钮
         self.pin_button = QPushButton("📌")  # 创建置顶按钮，使用图钉emoji
         self.pin_button.setFont(self.app_font)  # 设置按钮字体
-        self.pin_button.setToolTip("窗口置顶")  # 设置工具提示
+        self.pin_button.setToolTip("Pin window on top")  # 设置工具提示 # Changed to English
         self.pin_button.clicked.connect(self.toggle_topmost)  # 连接按钮点击信号到切换置顶状态的函数
         
         # 添加代币列表更新按钮
         self.update_tokens_button = QPushButton("🔄")  # 创建更新按钮，使用循环箭头emoji
         self.update_tokens_button.setFont(self.app_font)  # 设置按钮字体
-        self.update_tokens_button.setToolTip("更新代币列表")  # 设置工具提示
+        self.update_tokens_button.setToolTip("Update token list")  # 设置工具提示 # Changed to English
         self.update_tokens_button.clicked.connect(self.check_token_list_updates)  # 连接按钮点击信号
         self.update_tokens_button.setStyleSheet("""
             QPushButton {
@@ -693,13 +693,13 @@ class BeraHelperApp(QMainWindow):
         # 自启动按钮
         self.autostart_button = QPushButton("🚀")  # 创建自启动按钮，使用火箭emoji
         self.autostart_button.setFont(self.app_font)  # 设置按钮字体
-        self.autostart_button.setToolTip("开机自启动")  # 设置工具提示
+        self.autostart_button.setToolTip("Start on boot")  # 设置工具提示 # Changed to English
         self.autostart_button.clicked.connect(self.toggle_autostart)  # 连接按钮点击信号
         
         # 代币管理按钮
         self.token_button = QPushButton("💰")  # 创建代币管理按钮，使用钱袋emoji
         self.token_button.setFont(self.app_font)  # 设置按钮字体
-        self.token_button.setToolTip("代币管理")  # 设置工具提示
+        self.token_button.setToolTip("Token Management")  # 设置工具提示 # Changed to English
         self.token_button.clicked.connect(self.show_token_manager)  # 连接按钮点击信号
         self.token_button.setStyleSheet("""
             QPushButton {
@@ -819,11 +819,11 @@ class BeraHelperApp(QMainWindow):
         # 固定宽度，动态高度
         self.setFixedSize(260, total_height)
         
-        logging.debug(f'窗口大小已调整: 宽度=260, 高度={total_height} (代币数量: {len(self.user_tokens)})')
+        logging.debug(f'Window size adjusted: Width=260, Height={total_height} (Token count: {len(self.user_tokens)})') # Changed to English
     
     def create_token_widgets(self):
         """创建代币价格显示组件，并根据设置调整标签"""
-        logging.debug("执行 create_token_widgets") # Add log
+        logging.debug("Executing create_token_widgets") # Changed to English
         # 清空现有组件
         for widget in self.token_widgets.values():
             self.price_layout.removeWidget(widget)
@@ -838,7 +838,7 @@ class BeraHelperApp(QMainWindow):
             # 检查是否需要显示为 BERA 比率
             display_ratio = token.get("display_as_bera_ratio", False)
             # --- Add Logging Here ---
-            logging.debug(f"  为 {token_symbol} 创建 widget: display_as_bera_ratio = {display_ratio}")
+            logging.debug(f"  Creating widget for {token_symbol}: display_as_bera_ratio = {display_ratio}") # Changed to English
             # --- End Add Logging ---
 
             # 设置标签文本
@@ -855,7 +855,7 @@ class BeraHelperApp(QMainWindow):
     
     def update_pin_button_status(self):
         """更新置顶按钮显示状态，根据当前置顶状态设置按钮样式"""
-        logging.debug(f'更新置顶按钮状态: is_topmost={self.is_topmost}')  # 记录更新按钮状态的调试信息
+        logging.debug(f'Updating pin button status: is_topmost={self.is_topmost}')  # Changed to English
         
         if self.is_topmost:
             # 置顶状态 - 明亮金色，正常大小
@@ -892,7 +892,7 @@ class BeraHelperApp(QMainWindow):
         
         self.pin_button.setStyleSheet(style)
         self.pin_button.update()  # 强制更新按钮外观
-        logging.debug(f'按钮样式已更新: is_topmost={self.is_topmost}')
+        logging.debug(f'Button style updated: is_topmost={self.is_topmost}') # Changed to English
     
     # 窗口拖动相关方法
     def mousePressEvent(self, event: QMouseEvent):
@@ -910,7 +910,7 @@ class BeraHelperApp(QMainWindow):
     
     def toggle_topmost(self):
         """切换窗口置顶状态"""
-        logging.debug('切换置顶状态')
+        logging.debug('Toggling topmost state')  # Changed to English
         self.is_topmost = not self.is_topmost
         
         # Windows平台使用Win32 API直接设置窗口属性
@@ -943,13 +943,13 @@ class BeraHelperApp(QMainWindow):
                     # 应用新样式
                     win32gui.SetWindowLong(hwnd, win32con.GWL_EXSTYLE, new_style)
                     
-                    logging.info("使用Win32 API设置窗口置顶状态")
+                    logging.info("Set window topmost state using Win32 API") # Changed to English
                 else:
-                    logging.error("无法获取窗口句柄")
+                    logging.error("Could not get window handle") # Changed to English
                     self._toggle_topmost_qt()  # 回退到Qt方式
                     
             except Exception as e:
-                logging.error(f"使用Win32 API设置窗口置顶状态失败: {e}")
+                logging.error(f"Failed to set window topmost state using Win32 API: {e}") # Changed to English
                 # 回退到Qt方式
                 self._toggle_topmost_qt()
         else:
@@ -962,12 +962,12 @@ class BeraHelperApp(QMainWindow):
         # 显示成功提示
         if self.is_topmost:
             QToolTip.showText(self.pin_button.mapToGlobal(self.pin_button.rect().bottomLeft()), 
-                            "窗口已置顶", self)
+                            "Window pinned on top", self)
         else:
             QToolTip.showText(self.pin_button.mapToGlobal(self.pin_button.rect().bottomLeft()), 
-                            "窗口取消置顶", self)
+                            "Window unpinned", self)
         
-        logging.info(f'置顶状态已切换: is_topmost={self.is_topmost}')
+        logging.info(f'Topmost state toggled: is_topmost={self.is_topmost}') # Changed to English
 
     def _toggle_topmost_qt(self):
         """使用Qt方式切换窗口置顶状态（有闪烁）"""
@@ -986,7 +986,7 @@ class BeraHelperApp(QMainWindow):
         try:
             # 检查代币列表是否为空
             if not self.user_tokens:
-                logging.warning("用户代币列表为空")
+                logging.warning("User token list is empty") # Changed to English
                 return {}
             
             # 获取所有代币ID
@@ -1000,37 +1000,37 @@ class BeraHelperApp(QMainWindow):
                 "include_24hr_change": "true"
             }
             
-            logging.debug(f'请求价格数据: {url}')
-            logging.debug(f'请求参数: {params}')
+            logging.debug(f'Requesting price data: {url}') # Changed to English
+            logging.debug(f'Request parameters: {params}') # Changed to English
             
             try:
                 response = requests.get(url, params=params, timeout=10)  # 添加超时
                 
                 if response.status_code != 200:
-                    logging.error(f'价格数据请求失败: HTTP {response.status_code}')
-                    logging.debug(f'错误响应: {response.text}')
+                    logging.error(f'Price data request failed: HTTP {response.status_code}') # Changed to English
+                    logging.debug(f'Error response: {response.text}')
                     return {}
                     
                 data = response.json()
-                logging.debug(f'获取到价格数据: {json.dumps(data, indent=2)}')
+                logging.debug(f'Received price data: {json.dumps(data, indent=2)}') # Changed to English
                 
                 # 验证数据有效性
                 if not isinstance(data, dict):
-                    logging.error(f'无效的价格数据格式: {type(data)}')
+                    logging.error(f'Invalid price data format: {type(data)}') # Changed to English
                     return {}
                 
                 # 记录哪些代币获取到了数据，哪些没有
                 for token in self.user_tokens:
                     token_id = token["id"]
                     if token_id in data:
-                        logging.debug(f'成功获取 {token["symbol"]} 价格数据')
+                        logging.debug(f'Successfully fetched {token["symbol"]} price data') # Changed to English
                     else:
-                        logging.warning(f'未能获取 {token["symbol"]} 价格数据')
+                        logging.warning(f'Failed to get {token["symbol"]} price data') # Changed to English
                         
                 # 尝试单独获取缺失的代币
                 missing_tokens = [token for token in self.user_tokens if token["id"] not in data]
                 if missing_tokens:
-                    logging.info(f'尝试单独获取 {len(missing_tokens)} 个缺失代币的价格')
+                    logging.info(f'Attempting to fetch {len(missing_tokens)} missing tokens\' prices')
                     for token in missing_tokens:
                         try:
                             single_params = {
@@ -1043,22 +1043,22 @@ class BeraHelperApp(QMainWindow):
                                 single_data = single_response.json()
                                 if token["id"] in single_data:
                                     data[token["id"]] = single_data[token["id"]]
-                                    logging.info(f'单独获取 {token["symbol"]} 价格成功')
+                                    logging.info(f'Successfully fetched {token["symbol"]} price')
                                 else:
-                                    logging.warning(f'单独获取 {token["symbol"]} 价格返回空数据')
+                                    logging.warning(f'Fetching {token["symbol"]} price returned empty data')
                             else:
-                                logging.warning(f'单独获取 {token["symbol"]} 价格失败: HTTP {single_response.status_code}')
+                                logging.warning(f'Failed to fetch {token["symbol"]} price: HTTP {single_response.status_code}')
                         except Exception as e:
-                            logging.error(f'单独获取 {token["symbol"]} 价格时出错: {e}')
+                            logging.error(f'Error fetching {token["symbol"]} price: {e}')
                 
                 return data
                 
             except requests.RequestException as e:
-                logging.error(f'请求价格数据时网络错误: {e}')
+                logging.error(f'Network error while requesting price data: {e}')
                 return {}
                 
         except Exception as e:
-            logging.error(f'获取价格数据时发生错误: {e}')
+            logging.error(f'Error fetching price data: {e}')
             import traceback
             logging.error(traceback.format_exc())
             return {}
@@ -1072,10 +1072,10 @@ class BeraHelperApp(QMainWindow):
 
             if force_update:
                 should_fetch = True
-                reason = "强制更新"
+                reason = "Force update requested" # Changed to English
             elif self.fear_greed_cache is None or self.fear_greed_last_update is None:
                 should_fetch = True
-                reason = "缓存为空或无时间戳"
+                reason = "Cache is empty or no timestamp" # Changed to English
             else:
                 # 计算下次应该更新的时间点：上次更新日期的第二天早上8点
                 last_update_date = self.fear_greed_last_update.date()
@@ -1085,26 +1085,26 @@ class BeraHelperApp(QMainWindow):
 
                 if now >= target_update_datetime:
                     should_fetch = True
-                    reason = f"当前时间 {now.strftime('%Y-%m-%d %H:%M')} >= 目标更新时间 {target_update_datetime.strftime('%Y-%m-%d %H:%M')}"
+                    reason = f"Current time {now.strftime('%Y-%m-%d %H:%M')} >= Target update time {target_update_datetime.strftime('%Y-%m-%d %H:%M')}" # Changed to English
                 else:
-                    reason = f"当前时间 {now.strftime('%Y-%m-%d %H:%M')} < 目标更新时间 {target_update_datetime.strftime('%Y-%m-%d %H:%M')}"
+                    reason = f"Current time {now.strftime('%Y-%m-%d %H:%M')} < Target update time {target_update_datetime.strftime('%Y-%m-%d %H:%M')}" # Changed to English
 
-            logging.debug(f'检查是否获取新指数: {should_fetch}. 原因: {reason}')
+            logging.debug(f'Checking if new index is needed: {should_fetch}. Reason: {reason}')
 
             if not should_fetch:
-                logging.debug('使用缓存的恐惧贪婪指数数据')
+                logging.debug('Using cached Fear & Greed index data')
                 return self.fear_greed_cache
 
             # --- 如果需要获取，则执行以下代码 ---
-            logging.info('尝试获取新的恐惧贪婪指数数据...')
+            logging.info('Attempting to fetch new Fear & Greed index data...')
             try:
                 if not self.api_config.get('coinmarketcap', {}).get('enabled', False): # 更安全的检查
-                    logging.warning('CoinMarketCap API 未启用')
+                    logging.warning('CoinMarketCap API is not enabled') # Changed to English
                     return self.fear_greed_cache # 获取失败时返回旧缓存
 
                 api_key = os.getenv('CMC_API_KEY')
                 if not api_key:
-                    logging.error('未找到 CoinMarketCap API 密钥')
+                    logging.error('CoinMarketCap API key not found') # Changed to English
                     return self.fear_greed_cache # 获取失败时返回旧缓存
 
                 # API 请求部分保持不变
@@ -1112,7 +1112,7 @@ class BeraHelperApp(QMainWindow):
                 headers = {'X-CMC_PRO_API_KEY': api_key}
                 params = self.api_config['coinmarketcap']['params']['fear_greed']
 
-                logging.debug(f'请求恐惧贪婪指数: {url}')
+                logging.debug(f'Requesting Fear & Greed index: {url}') # Changed to English
                 response = requests.get(url, headers=headers, params=params, timeout=10) # 添加超时
 
                 if response.status_code == 200:
@@ -1121,21 +1121,21 @@ class BeraHelperApp(QMainWindow):
                         new_data = data['data'][0]
                         self.fear_greed_cache = new_data
                         self.fear_greed_last_update = now # 使用当前的获取时间作为下次判断的基准
-                        logging.info(f'恐惧贪婪指数更新成功: {self.fear_greed_cache["value"]} ({self.fear_greed_cache["value_classification"]})')
+                        logging.info(f'Fear & Greed index updated successfully: {self.fear_greed_cache["value"]} ({self.fear_greed_cache["value_classification"]})') # Changed to English
                         return self.fear_greed_cache
                     else:
-                        logging.warning('恐惧贪婪指数 API 返回数据为空')
+                        logging.warning('Fear & Greed index API returned empty data') # Changed to English
                         return self.fear_greed_cache # 获取失败时返回旧缓存
                 else:
-                    logging.error(f'恐惧贪婪指数请求失败: HTTP {response.status_code}')
-                    logging.debug(f'错误响应: {response.text}')
+                    logging.error(f'Failed to fetch Fear & Greed index: HTTP {response.status_code}')
+                    logging.debug(f'Error response: {response.text}')
                     return self.fear_greed_cache # 获取失败时返回旧缓存
 
             except requests.RequestException as e:
-                 logging.error(f'请求恐惧贪婪指数时网络错误: {e}')
+                 logging.error(f'Network error while requesting Fear & Greed index: {e}')
                  return self.fear_greed_cache # 获取失败时返回旧缓存
             except Exception as e:
-                logging.error(f'获取恐惧贪婪指数时发生错误: {e}')
+                logging.error(f'Error fetching Fear & Greed index: {e}')
                 import traceback
                 logging.error(traceback.format_exc())
                 return self.fear_greed_cache # 获取失败时返回旧缓存
@@ -1148,7 +1148,7 @@ class BeraHelperApp(QMainWindow):
     def _fetch_data_thread(self):
         """在线程中获取数据"""
         try:
-            logging.debug('开始获取数据...')
+            logging.debug('Starting data fetch...') # Changed to English
 
             # 获取价格数据
             price_data = self.get_prices()
@@ -1163,11 +1163,11 @@ class BeraHelperApp(QMainWindow):
             self.current_time = datetime.now().strftime("%H:%M:%S")
 
             # 触发UI更新信号
-            logging.debug('触发UI更新信号')
+            logging.debug('Emitting UI update signal') # Changed to English
             self.data_updated.emit()
 
         except Exception as e:
-            logging.error(f"数据获取错误: {e}")
+            logging.error(f"Data fetch error: {e}") # Changed to English
             import traceback
             logging.error(traceback.format_exc())
     
@@ -1176,14 +1176,14 @@ class BeraHelperApp(QMainWindow):
         """更新UI显示 (支持美元价格和BERA比率模式)"""
         try:
             self.time_label.setText(f"Last Updated: {self.current_time}")
-            logging.debug("执行 update_ui") # Add log
+            logging.debug("Executing update_ui") # Changed to English
 
             if hasattr(self, 'price_data') and self.price_data:
                 bera_price_usd = None
                 if self.BERA_ID in self.price_data and "usd" in self.price_data[self.BERA_ID]:
                     bera_price_usd = self.price_data[self.BERA_ID]["usd"]
                     if bera_price_usd is None or bera_price_usd <= 0:
-                        logging.warning(f"BERA价格无效 ({bera_price_usd})，无法计算比率。")
+                        logging.warning(f"BERA price is invalid ({bera_price_usd}), cannot calculate ratios.") # Changed to English
                         bera_price_usd = None
 
                 for token in self.user_tokens:
@@ -1192,13 +1192,13 @@ class BeraHelperApp(QMainWindow):
                         token_symbol = token["symbol"].upper()
 
                         if token_id not in self.token_widgets:
-                            logging.warning(f"update_ui: 找不到组件 for {token_id}")
+                            logging.warning(f"update_ui: Widget not found for {token_id}") # Changed to English
                             continue
 
                         widget = self.token_widgets[token_id]
                         display_ratio = token.get("display_as_bera_ratio", False)
                         # --- Add Logging Here ---
-                        logging.debug(f"  更新 {token_symbol}: display_as_bera_ratio = {display_ratio}")
+                        logging.debug(f"  Updating {token_symbol}: display_as_bera_ratio = {display_ratio}") # Changed to English
                         # --- End Add Logging ---
 
                         # 获取当前代币的美元价格和变化率 (保持不变)
@@ -1210,7 +1210,7 @@ class BeraHelperApp(QMainWindow):
                             token_price_usd = token_price_data["usd"]
                             change_usd = token_price_data.get("usd_24h_change")
                             if change_usd is not None: change_text = f"{change_usd:+.2f}%"
-                            else: logging.debug(f"{token_symbol} 变化为 null")
+                            else: logging.debug(f"{token_symbol} change is null") # Changed to English
 
                         # --- 开始判断显示模式 ---
                         if display_ratio:
@@ -1224,10 +1224,10 @@ class BeraHelperApp(QMainWindow):
                                     else: ratio_text = f" {ratio:.1f}%"
                                     widget.update_price(ratio_text, change_text)
                                     # logging.debug(f"    更新 {token_symbol} 比率: {ratio_text}") # Keep or remove this inner log
-                                except ZeroDivisionError: widget.update_price("Error", "--.--%"); logging.error(f"计算 {token_symbol}/BERA 比率时除零错误。")
-                                except Exception as e: widget.update_price("Error", "--.--%"); logging.error(f"计算 {token_symbol}/BERA 比率时出错: {e}")
-                            elif bera_price_usd is None: widget.update_price("No BERA", change_text); logging.debug(f"无法计算 {token_symbol}/BERA 比率，BERA价格不可用")
-                            else: widget.update_price("N/A", "--.--%"); logging.debug(f"无法计算 {token_symbol}/BERA 比率，{token_symbol}价格不可用")
+                                except ZeroDivisionError: widget.update_price("Error", "--.--%"); logging.error(f"Zero division error calculating {token_symbol}/BERA ratio.") # Changed to English
+                                except Exception as e: widget.update_price("Error", "--.--%"); logging.error(f"Error calculating {token_symbol}/BERA ratio: {e}") # Changed to English
+                            elif bera_price_usd is None: widget.update_price("No BERA", change_text); logging.debug(f"Cannot calculate {token_symbol}/BERA ratio, BERA price unavailable") # Changed to English
+                            else: widget.update_price("N/A", "--.--%"); logging.debug(f"Cannot calculate {token_symbol}/BERA ratio, {token_symbol} price unavailable") # Changed to English
                         else:
                             # --- 美元价格显示模式 ---
                             # ... (USD price display logic remains the same) ...
@@ -1243,22 +1243,22 @@ class BeraHelperApp(QMainWindow):
                                         else: price_text = f" ${token_price_usd:,.2f}"
                                     widget.update_price(price_text, change_text)
                                     # logging.debug(f"    更新 {token_symbol} 价格: {price_text}") # Keep or remove
-                                except Exception as e: widget.update_price("$--.--", "--.--%"); logging.error(f"格式化 {token_symbol} 价格时出错: {e}")
-                            else: widget.update_price("$--.--", "--.--%"); logging.debug(f"找不到 {token_symbol} 的价格数据")
+                                except Exception as e: widget.update_price("$--.--", "--.--%"); logging.error(f"Error formatting price for {token_symbol}: {e}") # Changed to English
+                            else: widget.update_price("$--.--", "--.--%"); logging.debug(f"No price data found for {token_symbol}") # Changed to English
 
                     except Exception as token_error:
-                        logging.error(f"处理代币 {token.get('symbol', '未知')} 时发生错误: {token_error}")
+                        logging.error(f"Error handling token {token.get('symbol', 'Unknown')}: {token_error}")
                         try:
                             if token_id in self.token_widgets: self.token_widgets[token_id].update_price("$Error$", "--.--%")
                         except Exception: pass
             else:
                 for token_id, widget in self.token_widgets.items(): widget.update_price("$--.--", "--.--%")
-                logging.warning("update_ui: 没有可用的价格数据")
+                logging.warning("update_ui: No price data available") # Changed to English
 
             self.update_fear_greed_display()
 
         except Exception as e:
-            logging.error(f"更新界面时出错: {e}")
+            logging.error(f"Error updating UI: {e}")
             import traceback; logging.error(traceback.format_exc())
     
     def update_fear_greed_display(self):
@@ -1272,13 +1272,23 @@ class BeraHelperApp(QMainWindow):
         try:
             fear_greed_data = self.fear_greed_data
             value = int(fear_greed_data['value'])
-            classification = fear_greed_data['value_classification']
-            
+            classification_raw = fear_greed_data['value_classification']
+
+            # --- Translate Classification ---
+            classification_map = {
+                "Extreme fear": "Extreme Fear",
+                "Fear": "Fear",
+                "Neutral": "Neutral",
+                "Greed": "Greed",
+                "Extreme greed": "Extreme Greed"
+            }
+            classification = classification_map.get(classification_raw, "Unknown") # Default to Unknown if not found
+
             # 处理时间戳
             timestamp = fear_greed_data.get('timestamp', '')
             time_str = "Unknown time"
             tz_display = ""
-            
+
             try:
                 # 获取当前系统时区偏移
                 local_now = datetime.now().astimezone()
@@ -1290,14 +1300,14 @@ class BeraHelperApp(QMainWindow):
                     tz_display = f"({'+' if offset_hours >= 0 else ''}{offset_hours})"
                 else:
                     tz_display = "(+0)"  # UTC
-                
+
                 # 尝试将时间戳转换为可读格式
                 if timestamp:
                     # 是的，API返回的时间戳格式可能有多种：
                     # 1. Unix时间戳（整数，表示从1970年1月1日起的秒数）
                     # 2. ISO 8601格式的字符串（如：2023-04-15T08:30:00Z 或 2023-04-15T08:30:00+00:00）
                     # 3. 其他自定义格式的日期时间字符串
-                    
+
                     # 处理Unix时间戳（整数秒）
                     if str(timestamp).isdigit():
                         timestamp_int = int(timestamp)
@@ -1315,7 +1325,7 @@ class BeraHelperApp(QMainWindow):
                         # 如果以Z结尾，替换为+00:00（UTC）
                         if ts_str.endswith('Z'):
                             ts_str = ts_str.replace('Z', '+00:00')
-                        
+
                         # 解析ISO格式时间字符串
                         try:
                             dt = datetime.fromisoformat(ts_str)
@@ -1339,37 +1349,37 @@ class BeraHelperApp(QMainWindow):
                         except Exception:
                             time_str = f"Date: {timestamp}"
             except Exception as e:
-                logging.error(f"处理时间戳时出错: {e}")
+                logging.error(f"Error handling timestamp: {e}") # Changed to English
                 time_str = f"Date: {timestamp}"
                 tz_display = ""
-            
-            # 根据分类设置颜色
-            if classification == "Extreme fear":
-                color = "#FF0000"  # 极度恐惧 - 红色
+
+            # 根据分类设置颜色 (Using translated classification)
+            if classification == "Extreme Fear":
+                color = "#FF0000"
             elif classification == "Fear":
-                color = "#FF7F00"  # 恐惧 - 橙色
+                color = "#FF7F00"
             elif classification == "Neutral":
-                color = "#FFFF00"  # 中性 - 黄色
+                color = "#FFFF00"
             elif classification == "Greed":
-                color = "#7FFF00"  # 贪婪 - 淡绿色
-            elif classification == "Extreme greed":
-                color = "#00FF00"  # 极度贪婪 - 绿色
-            else:
-                color = "#FFFFFF"  # 未知 - 白色
-            
-            # 更新UI显示
+                color = "#7FFF00"
+            elif classification == "Extreme Greed":
+                color = "#00FF00"
+            else: # Unknown
+                color = "#FFFFFF"
+
+            # 更新UI显示 (Using translated classification)
             self.fear_greed_value.setText(f" {value}")
             self.fear_greed_class.setText(f"({classification})")
             self.fear_greed_class.setStyleSheet(f"color: {color};")
-            
+
             # 显示时间和时区偏移
             if tz_display:
                 self.fear_greed_time.setText(f"Last Updated: {time_str} {tz_display}")
             else:
                 self.fear_greed_time.setText(f"Last Updated: {time_str}")
-            
+
         except Exception as e:
-            logging.error(f"更新恐惧贪婪指数显示时出错: {e}")
+            logging.error(f"Error updating Fear & Greed index display: {e}")
             import traceback
             logging.error(traceback.format_exc())
             self.fear_greed_value.setText(" --")
@@ -1388,15 +1398,15 @@ class BeraHelperApp(QMainWindow):
         try:
             if enable:
                 # --- Add registry entry ---
-                logging.info(f"写入注册表: 启用自启动 '{app_name}'")
+                logging.info(f"Writing registry: Enable autostart \'{app_name}\'") # Changed to English
                 app_path_raw = os.path.abspath(sys.argv[0])
                 if not os.path.exists(app_path_raw):
-                    raise FileNotFoundError(f"找不到应用程序路径: {app_path_raw}")
+                    raise FileNotFoundError(f"Application path not found: {app_path_raw}") # Changed to English
 
                 if app_path_raw.lower().endswith('.py'):
                     pythonw_path = os.path.join(os.path.dirname(sys.executable), 'pythonw.exe')
                     if not os.path.exists(pythonw_path):
-                        logging.warning(f"找不到 pythonw.exe，将使用 python.exe")
+                        logging.warning(f"pythonw.exe not found, will use python.exe") # Changed to English
                         pythonw_path = sys.executable
                     registry_value = f'"{pythonw_path}" "{app_path_raw}" --minimized --no-splash --no-log'
                 else:
@@ -1406,42 +1416,42 @@ class BeraHelperApp(QMainWindow):
                 reg_key = reg.OpenKey(key, key_path, 0, reg.KEY_WRITE)
                 try:
                     reg.SetValueEx(reg_key, app_name, 0, reg.REG_SZ, registry_value)
-                    logging.info("成功写入注册表项。")
+                    logging.info("Successfully wrote registry entry.") # Changed to English
                 finally:
                     reg.CloseKey(reg_key)
             else:
                 # --- Delete registry entry ---
-                logging.info(f"写入注册表: 禁用自启动 '{app_name}'")
+                logging.info(f"Writing registry: Disable autostart \'{app_name}\'") # Changed to English
                 try:
                     reg_key = reg.OpenKey(key, key_path, 0, reg.KEY_WRITE)
                     try:
                         reg.DeleteValue(reg_key, app_name)
-                        logging.info("成功删除注册表项。")
+                        logging.info("Successfully deleted registry entry.") # Changed to English
                     except FileNotFoundError:
-                        logging.warning(f"尝试删除注册表项 '{app_name}' 时发现它已不存在。")
+                        logging.warning(f"Attempted to delete registry entry \'{app_name}\', but it was already non-existent.") # Changed to English
                     finally:
                         reg.CloseKey(reg_key)
                 except FileNotFoundError:
-                     logging.warning(f"尝试打开注册表键以删除 '{app_name}' 时，键路径不存在。")
+                     logging.warning(f"Attempted to open registry key to delete \'{app_name}\', but the key path does not exist.") # Changed to English
 
 
             return True # Indicate success
 
         except PermissionError as e:
-            logging.error(f"注册表操作权限错误: {e}")
-            QMessageBox.warning(self, "权限不足", f"注册表操作失败: {e}\n\n可能需要管理员权限。")
+            logging.error(f"Registry operation permission error: {e}") # Changed to English
+            QMessageBox.warning(self, "Permission Denied", f"Registry operation failed: {e}\n\nAdministrator privileges may be required.") # Changed to English
             return False
         except Exception as e:
-            logging.error(f"注册表操作时发生错误: {e}")
+            logging.error(f"An error occurred during registry operation: {e}") # Changed to English
             import traceback
             logging.error(traceback.format_exc())
-            QMessageBox.warning(self, "错误", f"注册表操作时发生错误:\n{e}")
+            QMessageBox.warning(self, "Error", f"An error occurred during registry operation:\n{e}") # Changed to English
             return False
 
     def _apply_pending_autostart_setting(self):
         """Applies the pending autostart setting to the registry."""
         if self.pending_autostart_state is not None:
-            logging.info(f"延迟计时器触发，应用挂起的自启动设置: {self.pending_autostart_state}")
+            logging.info(f"Delayed timer triggered, applying pending autostart setting: {self.pending_autostart_state}") # Changed to English
             success = self._write_autostart_registry(enable=self.pending_autostart_state)
             if success:
                 self.pending_autostart_state = None # Reset pending state only if write succeeded
@@ -1450,7 +1460,7 @@ class BeraHelperApp(QMainWindow):
             else:
                 # If write failed, keep pending state so maybe exit save can try again? Or reset?
                 # Let's reset for now to avoid potential loops if permission is always denied.
-                logging.warning("应用挂起的自启动设置失败，重置挂起状态。")
+                logging.warning("Applying pending autostart setting failed, resetting pending state.") # Changed to English
                 self.pending_autostart_state = None
                 # Update button back to actual state
                 self.update_autostart_button_status()
@@ -1462,7 +1472,7 @@ class BeraHelperApp(QMainWindow):
             # Determine the state to display
             actual_state = self.is_autostart_enabled() # Check actual registry state
             display_state = self.pending_autostart_state if self.pending_autostart_state is not None else actual_state
-            logging.debug(f'更新自启动按钮状态: 实际={actual_state}, 挂起={self.pending_autostart_state}, 显示={display_state}')
+            logging.debug(f'Updating autostart button status: Actual={actual_state}, Pending={self.pending_autostart_state}, Display={display_state}') # Changed to English
 
             if display_state:
                 # Style for ENABLED (or pending enable)
@@ -1481,9 +1491,9 @@ class BeraHelperApp(QMainWindow):
                         color: #FFA500;
                     }
                 """
-                tooltip = "开机自启动 (已启用)"
+                tooltip = "Start on boot (Enabled)" # Changed to English
                 if self.pending_autostart_state is True:
-                     tooltip = "开机自启动 (将在1分钟后或退出时启用)"
+                     tooltip = "Start on boot (Will be enabled in 1 min or on exit)" # Changed to English
             else:
                 # Style for DISABLED (or pending disable)
                 style = """
@@ -1501,15 +1511,15 @@ class BeraHelperApp(QMainWindow):
                         color: #A9A9A9;
                     }
                 """
-                tooltip = "开机自启动 (已禁用)"
+                tooltip = "Start on boot (Disabled)" # Changed to English
                 if self.pending_autostart_state is False:
-                    tooltip = "开机自启动 (将在1分钟后或退出时禁用)"
+                    tooltip = "Start on boot (Will be disabled in 1 min or on exit)" # Changed to English
 
             self.autostart_button.setStyleSheet(style)
             self.autostart_button.setToolTip(tooltip) # Update tooltip as well
             self.autostart_button.update()
         except Exception as e:
-            logging.error(f"更新自启动按钮状态失败: {e}")
+            logging.error(f"Failed to update autostart button status: {e}") # Changed to English
 
     def is_autostart_enabled(self):
         """检查是否已通过注册表启用开机自启动"""
@@ -1525,25 +1535,25 @@ class BeraHelperApp(QMainWindow):
             try:
                 # 尝试查询名为 app_name 的值
                 reg.QueryValueEx(key, app_name)
-                logging.debug(f"注册表自启动项 '{app_name}' 存在。")
+                logging.debug(f"Registry autostart entry \'{app_name}\' exists.") # Changed to English
                 return True # 如果查询成功，说明已存在
             except FileNotFoundError:
-                logging.debug(f"注册表自启动项 '{app_name}' 不存在。")
+                logging.debug(f"Registry autostart entry \'{app_name}\' does not exist.") # Changed to English
                 return False # 如果查询时找不到值，说明不存在
             finally:
                 reg.CloseKey(key) # 确保关闭注册表项
         except Exception as e:
-            logging.error(f"检查注册表自启动状态失败: {e}")
+            logging.error(f"Failed to check registry autostart status: {e}") # Changed to English
             return False # 发生任何其他错误，都认为未启用
 
     def toggle_autostart(self):
         """切换挂起的自启动状态，并启动延迟保存计时器"""
         if sys.platform != 'win32':
-             QMessageBox.warning(self, "不支持", "此功能仅支持 Windows。")
+             QMessageBox.warning(self, "Not Supported", "This feature is only supported on Windows.") # Changed to English
              return
 
         if self.autostart_lock:
-            logging.debug("自启动操作正在进行中，忽略重复点击")
+            logging.debug("Autostart operation in progress, ignoring duplicate clicks.") # Changed to English
             return
 
         self.autostart_lock = True
@@ -1555,7 +1565,7 @@ class BeraHelperApp(QMainWindow):
             next_state = not current_display_state
 
             self.pending_autostart_state = next_state
-            logging.info(f"切换挂起的自启动状态为: {self.pending_autostart_state}")
+            logging.info(f"Toggling pending autostart state to: {self.pending_autostart_state}") # Changed to English
 
             # 1. 立即更新按钮外观和它存储的 ToolTip 内容 (反映挂起状态，用于鼠标悬停)
             self.update_autostart_button_status() # 这会设置正确的悬停提示
@@ -1563,9 +1573,9 @@ class BeraHelperApp(QMainWindow):
             # --- 2. 强制显示 *不同的* ToolTip 作为即时反馈 (反映切换动作) ---
             # 根据 next_state 决定即时反馈的文本
             if next_state:
-                immediate_feedback_text = "已切换为启用自启动"
+                immediate_feedback_text = "Switched to enable autostart" # Changed to English
             else:
-                immediate_feedback_text = "已切换为禁用自启动"
+                immediate_feedback_text = "Switched to disable autostart" # Changed to English
 
             # 使用上面确定的文本显示即时 Tooltip
             if immediate_feedback_text: # 确保文本不是空的
@@ -1580,13 +1590,13 @@ class BeraHelperApp(QMainWindow):
             # --- 即时反馈结束 ---
 
             # 3. 启动/重启 1 分钟的延迟保存计时器
-            logging.debug("启动/重启自启动设置延迟保存计时器 (60秒)")
+            logging.debug("Starting/restarting autostart setting delayed save timer (60 seconds)") # Changed to English
             self.autostart_save_timer.start() # Default interval is 60000ms
 
         except Exception as e:
              # This part should ideally not fail, but just in case
-             logging.error(f"切换挂起自启动状态时出错: {e}")
-             QMessageBox.warning(self, "错误", f"切换自启动状态时出错:\n{e}")
+             logging.error(f"Error toggling pending autostart state: {e}") # Changed to English
+             QMessageBox.warning(self, "Error", f"Error toggling autostart state:\n{e}") # Changed to English
              # Reset pending state on error?
              self.pending_autostart_state = None
              self.update_autostart_button_status() # Revert button to actual state
@@ -1598,19 +1608,19 @@ class BeraHelperApp(QMainWindow):
     def release_autostart_lock(self):
         """释放自启动操作锁"""
         self.autostart_lock = False
-        logging.debug("自启动操作锁已释放")
+        logging.debug("Autostart operation lock released") # Changed to English
 
     def closeEvent(self, event: QCloseEvent):
         """Override close event to save pending autostart setting."""
-        logging.info("接收到关闭事件，检查挂起的自启动设置...")
+        logging.info("Received close event, checking pending autostart setting...") # Changed to English
         # Stop the timer first to prevent race condition
         self.autostart_save_timer.stop()
-        logging.debug("延迟保存计时器已停止。")
+        logging.debug("Delayed save timer stopped.") # Changed to English
 
         # Apply pending setting if exists
         self._apply_pending_autostart_setting()
 
-        logging.info("允许窗口关闭。")
+        logging.info("Allowing window to close.") # Changed to English
         event.accept() # Allow the window to close
 
     def show_token_manager(self):
@@ -1621,26 +1631,26 @@ class BeraHelperApp(QMainWindow):
         from PySide6.QtCore import QTimer, Qt
 
         dialog = QDialog(self)
-        dialog.setWindowTitle("代币管理")
+        dialog.setWindowTitle("Token Management") # Changed to English
         dialog.setMinimumSize(400, 500)
 
         layout = QVBoxLayout(dialog)
         # --- UI 元素定义 (保持不变) ---
-        search_layout = QHBoxLayout(); search_label = QLabel("搜索币种:"); search_input = QLineEdit(); search_input.setPlaceholderText("输入币种名称或代号..."); search_layout.addWidget(search_label); search_layout.addWidget(search_input)
-        available_label = QLabel("可用代币: (双击添加)"); available_list = QListWidget(); available_list.setSelectionMode(QListWidget.SingleSelection)
-        selected_label = QLabel("已选代币: (双击移除)"); selected_label.setToolTip("勾选代币名称前的复选框，可将其显示切换为与 BERA 的比率 (%)"); selected_list = QListWidget()
-        button_layout = QHBoxLayout(); add_button = QPushButton("添加 ➡"); remove_button = QPushButton("⬅ 移除"); move_up_button = QPushButton("⬆ 上移"); move_down_button = QPushButton("⬇ 下移"); button_layout.addWidget(add_button); button_layout.addWidget(remove_button); button_layout.addWidget(move_up_button); button_layout.addWidget(move_down_button)
-        dialog_buttons = QHBoxLayout(); ok_button = QPushButton("确定"); cancel_button = QPushButton("取消"); dialog_buttons.addStretch(); dialog_buttons.addWidget(ok_button); dialog_buttons.addWidget(cancel_button)
+        search_layout = QHBoxLayout(); search_label = QLabel("Search Coin:"); search_input = QLineEdit(); search_input.setPlaceholderText("Enter coin name or symbol..."); search_layout.addWidget(search_label); search_layout.addWidget(search_input) # Changed placeholder
+        available_label = QLabel("Available Tokens: (Double-click to add)"); available_list = QListWidget(); available_list.setSelectionMode(QListWidget.SingleSelection) # Changed label
+        selected_label = QLabel("Selected Tokens: (Double-click to remove)"); selected_label.setToolTip("Check the box next to a token name to display its value as a ratio (%) to BERA"); selected_list = QListWidget() # Changed label and tooltip
+        button_layout = QHBoxLayout(); add_button = QPushButton("Add ➡"); remove_button = QPushButton("⬅ Remove"); move_up_button = QPushButton("⬆ Move Up"); move_down_button = QPushButton("⬇ Move Down"); button_layout.addWidget(add_button); button_layout.addWidget(remove_button); button_layout.addWidget(move_up_button); button_layout.addWidget(move_down_button) # Changed button text
+        dialog_buttons = QHBoxLayout(); ok_button = QPushButton("OK"); cancel_button = QPushButton("Cancel"); dialog_buttons.addStretch(); dialog_buttons.addWidget(ok_button); dialog_buttons.addWidget(cancel_button) # Changed button text
         layout.addLayout(search_layout); layout.addWidget(available_label); layout.addWidget(available_list); layout.addLayout(button_layout); layout.addWidget(selected_label); layout.addWidget(selected_list); layout.addLayout(dialog_buttons)
 
 
         # --- 1. 创建副本和本地字典 (保持不变) ---
         try:
              dialog_user_tokens = copy.deepcopy(self.user_tokens)
-             logging.debug("创建 dialog_user_tokens 副本成功")
+             logging.debug("Successfully created dialog_user_tokens copy") # Changed log
         except Exception as copy_err:
-             logging.error(f"创建用户代币列表副本失败: {copy_err}")
-             QMessageBox.critical(self, "错误", "无法打开代币管理器：创建数据副本失败。")
+             logging.error(f"Failed to create copy of user token list: {copy_err}") # Changed log
+             QMessageBox.critical(self, "Error", "Cannot open token manager: Failed to create data copy.") # Changed message
              return
         selected_tokens_dict = {token["id"]: token for token in dialog_user_tokens}
 
@@ -1651,7 +1661,7 @@ class BeraHelperApp(QMainWindow):
         def fill_available_list(): # <--- 定义移到前面
             """填充可用代币列表 (使用 self.available_tokens)"""
             available_list.clear(); search_text = search_input.text().lower()
-            logging.debug(f"fill_available_list: 搜索文本='{search_text}'")
+            logging.debug(f"fill_available_list: Search text='{search_text}'") # Changed to English
             count = 0
             for token in self.available_tokens:
                 if token["id"] in selected_tokens_dict: continue
@@ -1667,12 +1677,12 @@ class BeraHelperApp(QMainWindow):
                 item.setData(Qt.UserRole, token)
                 available_list.addItem(item)
                 count += 1
-            logging.debug(f"fill_available_list 完成，添加了 {count} 项")
+            logging.debug(f"fill_available_list completed, added {count} items") # Changed to English
 
         def fill_selected_list(): # <--- 定义移到前面
             """填充已选代币列表 (使用 dialog_user_tokens)"""
             selected_list.clear()
-            logging.debug("fill_selected_list: 使用 dialog_user_tokens 填充列表")
+            logging.debug("fill_selected_list: Populating list using dialog_user_tokens") # Changed to English
             for token_data in dialog_user_tokens:
                 item_text = f"{token_data['name']} ({token_data['symbol'].upper()})"
                 item = QListWidgetItem(item_text)
@@ -1681,16 +1691,16 @@ class BeraHelperApp(QMainWindow):
                 item.setCheckState(Qt.Checked if initial_state else Qt.Unchecked)
                 item.setData(Qt.UserRole, token_data)
                 selected_list.addItem(item)
-            logging.debug(f"fill_selected_list 完成，添加了 {selected_list.count()} 项")
+            logging.debug(f"fill_selected_list completed, added {selected_list.count()} items") # Changed to English
 
         def delayed_search(): # <--- 定义移到前面
             """延迟执行搜索"""
-            logging.debug("delayed_search: 触发搜索计时器")
+            logging.debug("delayed_search: Triggering search timer") # Changed to English
             search_timer.start()
 
         def update_model_from_list_state(): # <--- 定义移到前面
             """将列表状态同步到 dialog_user_tokens 副本"""
-            logging.debug("同步列表复选框状态到 dialog_user_tokens 副本...")
+            logging.debug("Syncing list checkbox states to dialog_user_tokens copy...") # Changed to English
             token_map = {token['id']: token for token in dialog_user_tokens}
             for i in range(selected_list.count()):
                 item = selected_list.item(i)
@@ -1701,8 +1711,8 @@ class BeraHelperApp(QMainWindow):
                         if item.flags() & Qt.ItemIsUserCheckable:
                             current_check_state = (item.checkState() == Qt.Checked)
                             token_map[token_id]['display_as_bera_ratio'] = current_check_state
-                    else: logging.warning(f"同步状态时在副本中找不到ID: {token_id}")
-                else: logging.warning(f"列表项 {i} 没有有效数据")
+                    else: logging.warning(f"Could not find ID in copy when syncing state: {token_id}") # Changed to English
+                else: logging.warning(f"List item {i} has no valid data") # Changed to English
 
 
         # --- 3. 定义动作/事件处理函数 (现在可以安全调用上面的辅助函数了) ---
@@ -1762,14 +1772,14 @@ class BeraHelperApp(QMainWindow):
                 selected_list.setCurrentRow(current_row+1)
 
         def on_cancel():
-            logging.debug("用户点击取消，丢弃更改")
+            logging.debug("User clicked Cancel, discarding changes") # Changed log
             dialog.reject()
 
         def on_ok():
-            logging.debug("用户点击确定")
+            logging.debug("User clicked OK") # Changed log
             update_model_from_list_state() # 调用辅助函数
             self.user_tokens = dialog_user_tokens
-            logging.debug("on_ok: 即将保存的 token 列表状态:")
+            logging.debug("on_ok: Token list state to be saved:") # Changed log
             for tkn in self.user_tokens: logging.debug(f"  - {tkn.get('symbol', '?')}: display_as_bera_ratio = {tkn.get('display_as_bera_ratio', 'Not Set')}")
             self.save_user_tokens()
             self.create_token_widgets()
@@ -1806,13 +1816,13 @@ class BeraHelperApp(QMainWindow):
             
             # 获取代币列表文件路径
             tokens_path = resource_path('coingecko.list')
-            logging.info(f'检查代币列表更新: {tokens_path}')
+            logging.info(f'Checking for token list updates: {tokens_path}') # Changed log
             
             # 显示进度对话框
             msg = QMessageBox(self)
             msg.setIcon(QMessageBox.Information)
-            msg.setText("正在检查代币列表更新...")
-            msg.setWindowTitle("更新检查")
+            msg.setText("Checking for token list updates...") # Changed message
+            msg.setWindowTitle("Update Check") # Changed title
             msg.setStandardButtons(QMessageBox.NoButton)
             msg.show()
             QApplication.processEvents()  # 强制更新UI
@@ -1825,8 +1835,8 @@ class BeraHelperApp(QMainWindow):
                 now = datetime.now()
                 # 如果文件在24小时内更新过，则不需要再次更新
                 if (now - file_mod_time) < timedelta(days=1):
-                    logging.info(f'代币列表已于 {file_mod_time} 更新，无需更新')
-                    msg.setText("代币列表已是最新的！\n最后更新时间: " + 
+                    logging.info(f'Token list updated at {file_mod_time}, no update needed') # Changed log
+                    msg.setText("Token list is up to date!\nLast updated: " + 
                                file_mod_time.strftime("%Y-%m-%d %H:%M:%S"))
                     msg.setStandardButtons(QMessageBox.Ok)
                     msg.exec()
@@ -1834,7 +1844,7 @@ class BeraHelperApp(QMainWindow):
             
             # 发送请求获取代币列表
             try:
-                logging.info("从CoinGecko API获取代币列表...")
+                logging.info("Fetching token list from CoinGecko API...") # Changed log
                 response = requests.get("https://api.coingecko.com/api/v3/coins/list", 
                                        timeout=30)  # 增加超时时间
                 
@@ -1848,8 +1858,8 @@ class BeraHelperApp(QMainWindow):
                             with open(tokens_path, 'r', encoding='utf-8') as f:
                                 old_tokens = json.load(f)
                         except Exception as e:
-                            logging.error(f'读取旧代币列表失败: {e}')
-                    
+                            logging.error(f'Failed to read old token list: {e}') # Changed log
+
                     new_tokens_count = len(tokens_data)
                     old_tokens_count = len(old_tokens)
                     delta = new_tokens_count - old_tokens_count
@@ -1858,38 +1868,38 @@ class BeraHelperApp(QMainWindow):
                     try:
                         with open(tokens_path, 'w', encoding='utf-8') as f:
                             json.dump(tokens_data, f, ensure_ascii=False)
-                        logging.info(f'已下载并保存代币列表: {new_tokens_count}个代币')
-                        
+                        logging.info(f'Downloaded and saved token list: {new_tokens_count} tokens') # Changed log
+
                         # 更新内存中的代币列表
                         self.available_tokens = tokens_data
                         
                         # 显示成功消息
                         delta_text = ""
                         if delta > 0:
-                            delta_text = f"\n\n新增了 {delta} 个代币！"
+                            delta_text = f"\n\nAdded {delta} new tokens!" # Changed message
                         elif delta < 0:
-                            delta_text = f"\n\n减少了 {abs(delta)} 个代币。"
+                            delta_text = f"\n\nRemoved {abs(delta)} tokens." # Changed message
                         
-                        msg.setText(f"已成功获取并更新代币列表！\n\n"
-                                   f"共 {new_tokens_count} 个代币{delta_text}")
+                        msg.setText(f"Successfully fetched and updated token list!\n\n" # Changed message
+                                   f"Total {new_tokens_count} tokens{delta_text}")
                         msg.setStandardButtons(QMessageBox.Ok)
                         msg.exec()
                     except Exception as save_err:
-                        logging.error(f'保存代币列表失败: {save_err}')
-                        msg.setText(f"保存代币列表时出错: {save_err}")
+                        logging.error(f'Failed to save token list: {save_err}') # Changed log
+                        msg.setText(f"Error saving token list: {save_err}") # Changed message
                         msg.setIcon(QMessageBox.Critical)
                         msg.setStandardButtons(QMessageBox.Ok)
                         msg.exec()
                 else:
-                    logging.error(f'从CoinGecko获取代币列表失败: HTTP {response.status_code}')
-                    msg.setText(f"从CoinGecko获取代币列表失败\n错误代码: {response.status_code}")
+                    logging.error(f'Failed to fetch token list from CoinGecko: HTTP {response.status_code}') # Changed log
+                    msg.setText(f"Failed to fetch token list from CoinGecko\nError code: {response.status_code}") # Changed message
                     msg.setIcon(QMessageBox.Warning)
                     msg.setStandardButtons(QMessageBox.Ok)
                     msg.exec()
-                    
+
             except Exception as net_err:
-                logging.error(f'网络请求错误: {net_err}')
-                msg.setText(f"网络请求错误: {net_err}")
+                logging.error(f'Network request error: {net_err}') # Changed log
+                msg.setText(f"Network request error: {net_err}") # Changed message
                 msg.setIcon(QMessageBox.Critical)
                 msg.setStandardButtons(QMessageBox.Ok)
                 msg.exec()
@@ -1904,14 +1914,14 @@ def main():
     """主程序入口"""
     # 检测运行环境
     is_packaged = getattr(sys, "frozen", False) and hasattr(sys, "_MEIPASS")
-    logging.info(f"程序启动 - {'打包环境' if is_packaged else '开发环境'}")
+    logging.info(f"Application starting - {'Packaged environment' if is_packaged else 'Development environment'}") # Changed log
     if is_packaged:
-        logging.info(f"打包路径: {sys._MEIPASS}")
-        logging.info(f"执行文件: {sys.executable}")
-        logging.info(f"工作目录: {os.getcwd()}")
-        logging.info(f"命令行参数: {sys.argv}")
+        logging.info(f"Packaged path: {sys._MEIPASS}") # Changed log
+        logging.info(f"Executable: {sys.executable}") # Changed log
+        logging.info(f"Working directory: {os.getcwd()}") # Changed log
+        logging.info(f"Command line arguments: {sys.argv}") # Changed log
     
-    logging.info("启动PySide6版本应用")
+    logging.info("Starting PySide6 version application") # Changed log
     app = QApplication(sys.argv)
     
     # 设置应用图标
@@ -1926,10 +1936,10 @@ def main():
                 myappid = 'BeraHelper.1.0'
                 ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
             except Exception as e:
-                logging.error(f'设置任务栏图标ID失败: {e}')
-        logging.info(f'应用图标已全局设置: {icon_path}')
+                logging.error(f'Failed to set taskbar icon ID: {e}') # Changed log
+        logging.info(f'Application icon set globally: {icon_path}') # Changed log
     else:
-        logging.warning(f'全局图标文件不存在: {icon_path}')
+        logging.warning(f'Global icon file does not exist: {icon_path}') # Changed log
     
     window = BeraHelperApp()
     
