@@ -1,145 +1,230 @@
-# BeraHelper - Real-time Crypto Price Display
+# Bera Helper - Crypto Price Monitor
 
-A desktop gadget built with PySide6 to display real-time prices of BeraChain-related tokens, other cryptocurrencies, and the Fear & Greed Index.
+A simple desktop widget to display real-time prices, 24-hour change percentages, and the Fear & Greed Index for selected cryptocurrencies.
 
 ## Features
 
-*   Displays real-time USD prices and 24-hour change for various cryptocurrencies.
-*   Supports displaying the price of certain tokens as a ratio (%) to BERA.
-*   Shows the Fear & Greed Index from CoinMarketCap.
-*   Draggable and always-on-top window.
-*   Manage the displayed token list via a graphical interface.
-*   Supports setting auto-start on boot (via Windows Registry).
-*   Configurable update intervals and interface colors (via `bera_helper_config.json`).
-*   Automatically checks and prompts for updates to the CoinGecko token list.
+*   **Real-time Prices**: Fetches and displays USD prices for various cryptocurrencies (e.g., BTC, ETH, BERA, IBGT).
+*   **24h Change**: Shows the corresponding 24-hour percentage change alongside the price.
+*   **Fear & Greed Index**: Scrapes the current Fear & Greed index value from the CoinMarketCap website and classifies it based on common standards.
+*   **Ratio Display Mode**: Option to display the price of certain tokens as a percentage ratio relative to the BERA token price.
+*   **Custom Token List**: Manage the list of displayed tokens and their display mode (USD Price or BERA Ratio) via a GUI.
+*   **Always on Top**: Toggle whether the window stays above all other windows using a button.
+*   **Window Dragging**: Borderless window that can be moved by clicking and dragging.
+*   **Independent Auto-Update**: Price data and Fear & Greed Index data now refresh independently based on intervals set in the configuration file.
+*   **Run on Startup (Windows)**: Optional configuration to automatically start the application when Windows boots.
+*   **Command-Line Log Level Control**: Control the verbosity of log output using the `--log-level` command-line argument.
+*   **Flexible Configuration**: Configure update intervals, color themes, F&G source URL, etc., via JSON files.
+*   **Logging**: Logs runtime information and errors to files for easier troubleshooting (log level is configurable).
 
-## Installation and Usage
+## How to Run
 
-1.  **Clone the repository:**
-    ```bash
-    git clone https://github.com/tujj99/BeraHelper.git
-    cd BeraHelper
+### Dependencies
+
+Ensure you have Python installed along with the following libraries:
+
+*   `PySide6`: For the graphical user interface.
+*   `requests`: For making HTTP requests.
+*   `beautifulsoup4`: For parsing HTML (used for scraping the Fear & Greed Index).
+*   `python-dotenv`: For loading environment variables from a `.env` file (Note: `.env` is no longer required by the current code, but loading logic remains for future use).
+*   `python-dateutil`: For date/time parsing.
+*   `pywin32` (Windows Only): For window pinning (always on top) and run-on-startup functionality.
+
+Install them using pip:
+```bash
+pip install PySide6 requests beautifulsoup4 python-dotenv python-dateutil pywin32
+```
+
+### Running the Script
+
+1.  Ensure your project structure is similar to this (`.env` file is optional):
     ```
-2.  **Install dependencies:**
-    Using a virtual environment (like venv or conda) is recommended.
-    ```bash
-    # Create virtual environment (optional)
-    # python -m venv venv
-    # source venv/bin/activate  # Linux/macOS
-    # venv\Scripts\activate    # Windows
-
-    # Install dependencies
-    pip install -r requirements.txt
+    /your_project_directory/
+    ├── BeraHelper/
+    │   ├── BeraHelper.py           # Main application script
+    │   ├── bera_helper_config.json # Main configuration file
+    │   ├── coingecko.list          # CoinGecko token list (auto-downloaded if missing)
+    │   ├── bera.ico                # Application icon
+    │   └── ... (Other potential resources)
+    ├── CHANGELOG.md                # (New) Changelog
+    └── README.md                   # (This file)
     ```
-3.  **Configure API Key (Optional):**
-    *   An API key is required if you want to use the Fear & Greed Index feature from CoinMarketCap.
-    *   Copy the `.env.example` file in the repository to `.env`.
-    *   Edit the `.env` file and enter your CoinMarketCap API key:
-        ```
-        CMC_API_KEY=YOUR_API_KEY_HERE
-        ```
-4.  **Run the application:**
+2.  Run the Python script:
     ```bash
-    python BeraHelper.py
+    # Run with default INFO log level
+    python BeraHelper/BeraHelper.py
+
+    # Run with DEBUG log level (more verbose)
+    python BeraHelper/BeraHelper.py --log-level DEBUG
+
+    # Run with WARNING log level (only warnings and above)
+    python BeraHelper/BeraHelper.py --log-level WARNING
+    ```
+    Supported log levels: `DEBUG`, `INFO`, `WARNING`, `ERROR`, `CRITICAL`.
+
+### (Optional) Running the Packaged `.exe` (Windows)
+
+If you have packaged the script into an `.exe` file using PyInstaller or similar tools:
+
+1.  Ensure the necessary resource files (icon, config, token list) are included in the package or located correctly relative to the `.exe`.
+2.  Run the `.exe` file. You can also run it from the command line and append the `--log-level` argument:
+    ```bash
+    .\BeraHelper.exe --log-level DEBUG
     ```
 
-## How to Use
+## Configuration
 
-*   The application will display the configured token prices upon launch.
-*   The window can be dragged with the mouse.
-*   **Control Buttons:**
-    *   📌: Toggle always-on-top status.
-    *   🔄: Manually check and update the available token list (from CoinGecko).
-    *   🚀: Toggle auto-start on boot status (Windows).
-    *   💰: Open the token management window.
-    *   ×: Close the application.
-*   **Token Management:**
-    *   In the token management window, search and double-click tokens from the left list to add them, or double-click tokens from the right list to remove them.
-    *   In the right "Selected Tokens" list, check the checkbox before a token's name to switch its display mode to the price ratio relative to BERA.
-    *   Use the up/down arrow buttons to adjust the display order of tokens.
-    *   Click "OK" to save changes, or "Cancel" to discard them.
-*   **Configuration Files:**
-    *   `bera_helper_config.json`: Can be used to modify font, colors, price update interval, etc.
-    *   `user_tokens.json` (located in `%APPDATA%\BeraHelper` on Windows): Stores the user's selected token list and settings. **Do not edit this file manually**; use the in-app token manager instead.
+The application reads configuration files from the `BeraHelper` directory:
 
-## Building (Optional)
+*   **`bera_helper_config.json`**:
+    *   `styles`: Configure UI element colors and fonts.
+    *   `window.update_interval`: Main update interval for **price data** (in seconds).
+    *   `fear_greed_source.url`: Webpage URL to scrape for the Fear & Greed Index.
+    *   `fear_greed_source.update_interval`: Update interval for the **Fear & Greed Index** (in seconds).
+*   **`user_tokens.json`** (Located in the user data directory): Stores the user-managed token list and display modes.
+*   **`.env`**: (No longer required) If present, `python-dotenv` will still attempt to load it, but the current code doesn't use variables from it.
 
-If you want to package the application into a single `.exe` file, you can use the `build_exe.bat` script included in the project (requires PyInstaller: `pip install pyinstaller`).
+## Packaging (Using PyInstaller)
 
-## License
+To package the script into a standalone executable (`.exe`):
 
-This project is licensed under the MIT License. See the `LICENSE` file for details.
+1.  Install PyInstaller: `pip install pyinstaller`
+2.  Ensure your working directory is the one **above** `BeraHelper/`.
+3.  Run the PyInstaller command (example for Windows, adjust path separators and continuation characters for Linux/macOS):
+
+    ```bash
+    pyinstaller --noconfirm --onedir --windowed --icon "BeraHelper/bera.ico" ^
+    --add-data "BeraHelper/bera.ico;BeraHelper/" ^
+    --add-data "BeraHelper/bera_helper_config.json;BeraHelper/" ^
+    --add-data "BeraHelper/coingecko.list;BeraHelper/" ^
+    --hidden-import "PySide6.QtSvg" ^
+    --hidden-import "PySide6.QtNetwork" ^
+    "BeraHelper/BeraHelper.py"
+    ```
+    *   You might want to create a shortcut to the executable in the `dist/BeraHelper` folder and add `--log-level INFO` (or another level) to the shortcut target to control the default log level when launched via the shortcut.
+
+4.  The packaged application will be in the `dist/BeraHelper` directory.
+
+## Notes
+
+*   **Fear & Greed Index Scraping**: Relies on scraping the CoinMarketCap webpage and manual classification based on the value. Changes to the website's HTML structure may break the scraping.
+*   **CoinGecko API**: Price data depends on CoinGecko's free API, which may have rate limits.
+*   **User Data Directory**: `user_tokens.json` and log files are stored in a user-specific data directory or the application directory.
+*   **Log Files**: Log files are generated in a `logs` subdirectory within the user data directory. The level of detail is controlled by the `--log-level` argument.
 
 ---
 
-# BeraHelper - 实时币价显示 (中文说明)
+# Bera Helper - 加密货币价格监控器 (中文)
 
-一个使用 PySide6 构建的桌面小工具，用于实时显示 BeraChain 相关代币和其他加密货币的价格，以及恐惧与贪婪指数。
+一个简单的桌面小部件，用于实时显示选定的加密货币价格、24 小时变化率以及恐惧与贪婪指数。
 
 ## 主要功能
 
-*   实时显示多种加密货币的美元价格和 24 小时变化率。
-*   支持将某些代币的价格显示为与 BERA 的比率 (%)。
-*   显示来自 CoinMarketCap 的恐惧与贪婪指数。
-*   窗口可拖动、可置顶。
-*   支持通过图形界面管理显示的代币列表。
-*   支持设置开机自启动（通过 Windows 注册表）。
-*   可配置的更新间隔和界面颜色（通过 `bera_helper_config.json`）。
-*   自动检查并提示更新 CoinGecko 代币列表。
+*   **实时价格显示**: 获取并展示多种加密货币（如 BTC, ETH, BERA, IBGT 等）的美元价格。
+*   **24小时变化率**: 同时显示价格对应的 24 小时涨跌幅百分比。
+*   **恐惧与贪婪指数**: 通过抓取 CoinMarketCap 网页获取当前的恐惧与贪婪指数值，并根据常见标准进行手动分类。
+*   **比率显示模式**: 支持将某些代币的价格显示为其与 BERA 代币的价格比率（百分比）。
+*   **自定义代币列表**: 用户可以通过图形界面管理要显示的代币列表，并设置特定代币的显示模式（美元价格或 BERA 比率）。
+*   **窗口置顶**: 可以通过按钮切换窗口是否保持在所有其他窗口之上。
+*   **窗口拖动**: 无边框窗口，但可以通过按住鼠标左键拖动。
+*   **独立自动更新**: 价格数据和恐惧贪婪指数数据现在根据配置文件中的不同间隔独立自动刷新。
+*   **开机自启动 (Windows)**: 可选配置，使程序在 Windows 启动时自动运行。
+*   **命令行日志级别控制**: 可以通过命令行参数 `--log-level` 控制日志输出的详细程度。
+*   **配置灵活**: 通过 JSON 文件配置更新间隔、颜色主题、F&G 指数来源 URL 等。
+*   **日志记录**: 将运行信息和错误记录到日志文件，便于排查问题（日志级别可配置）。
 
-## 安装与运行
+## 运行说明
 
-1.  **克隆仓库:**
-    ```bash
-    git clone https://github.com/tujj99/BeraHelper.git
-    cd BeraHelper
+### 依赖项
+
+确保你安装了 Python 和以下库：
+
+*   `PySide6`: 用于图形用户界面。
+*   `requests`: 用于发送 HTTP 请求。
+*   `beautifulsoup4`: 用于解析 HTML (抓取恐惧贪婪指数)。
+*   `python-dotenv`: 用于加载 `.env` 文件中的环境变量（注意：当前代码不再需要 `.env` 文件，但保留了加载逻辑以备将来使用）。
+*   `python-dateutil`: 用于日期时间解析。
+*   `pywin32` (仅限 Windows): 用于窗口置顶和开机自启动功能。
+
+你可以使用 pip 安装它们：
+```bash
+pip install PySide6 requests beautifulsoup4 python-dotenv python-dateutil pywin32
+```
+
+### 运行脚本
+
+1.  确保你的项目结构如下（`.env` 文件不再是必需的）：
     ```
-2.  **安装依赖:**
-    建议使用虚拟环境 (如 venv 或 conda)。
-    ```bash
-    # 创建虚拟环境 (可选)
-    # python -m venv venv
-    # source venv/bin/activate  # Linux/macOS
-    # venv\Scripts\activate    # Windows
-
-    # 安装依赖
-    pip install -r requirements.txt
+    /你的项目目录/
+    ├── BeraHelper/
+    │   ├── BeraHelper.py       # 主程序脚本
+    │   ├── bera_helper_config.json # 主配置文件
+    │   ├── coingecko.list      # CoinGecko 代币列表 (可自动下载)
+    │   ├── bera.ico            # 应用图标
+    │   └── ... (其他可能的资源)
+    ├── CHANGELOG.md            # (新增) 变更日志
+    └── README.md               # (本文件)
     ```
-3.  **配置 API 密钥 (可选):**
-    *   如果你想使用 CoinMarketCap 的恐惧与贪婪指数功能，需要获取一个 API 密钥。
-    *   将仓库中的 `.env.example` 文件复制为 `.env`。
-    *   编辑 `.env` 文件，填入你的 CoinMarketCap API 密钥：
-        ```
-        CMC_API_KEY=你的API密钥放这里
-        ```
-4.  **运行程序:**
+2.  运行 Python 脚本：
     ```bash
-    python BeraHelper.py
+    # 默认以 INFO 日志级别运行
+    python BeraHelper/BeraHelper.py
+
+    # 以 DEBUG 日志级别运行 (输出更详细)
+    python BeraHelper/BeraHelper.py --log-level DEBUG
+
+    # 以 WARNING 日志级别运行 (只输出警告及以上)
+    python BeraHelper/BeraHelper.py --log-level WARNING
+    ```
+    支持的日志级别：`DEBUG`, `INFO`, `WARNING`, `ERROR`, `CRITICAL`。
+
+### (可选) 运行打包后的 `.exe` (Windows)
+
+如果你已经使用 PyInstaller 等工具将脚本打包成了 `.exe` 文件：
+
+1.  确保 `.exe` 文件所在的目录包含必要的资源文件（如图标、配置文件、代币列表等），或者打包时已正确包含它们。
+2.  运行 `.exe` 文件。你也可以在命令行中运行并附加 `--log-level` 参数：
+    ```bash
+    .\BeraHelper.exe --log-level DEBUG
     ```
 
-## 使用说明
+## 配置说明
 
-*   程序启动后会显示配置好的代币价格。
-*   窗口可以通过鼠标拖动。
-*   **控制按钮:**
-    *   📌: 切换窗口置顶状态。
-    *   🔄: 手动检查并更新可用代币列表 (来自 CoinGecko)。
-    *   🚀: 切换开机自启动状态 (Windows)。
-    *   💰: 打开代币管理窗口。
-    *   ×: 关闭程序。
-*   **代币管理:**
-    *   在代币管理窗口中，可以从左侧列表搜索并双击添加代币，或从右侧列表双击移除代币。
-    *   在右侧已选列表中，勾选代币名前的复选框，可以将其显示模式切换为与 BERA 的价格比率。
-    *   使用上下箭头按钮调整代币显示顺序。
-    *   点击"确定"保存更改，点击"取消"放弃更改。
-*   **配置文件:**
-    *   `bera_helper_config.json`: 可用于修改字体、颜色、价格更新间隔等。
-    *   `user_tokens.json` (位于 `%APPDATA%\BeraHelper`): 保存用户选择的代币列表和设置，**请勿手动编辑此文件**，应通过程序内的代币管理器修改。
+程序运行时会读取 `BeraHelper` 目录下的配置文件：
 
-## 构建 (可选)
+*   **`bera_helper_config.json`**:
+    *   `styles`: 配置 UI 元素的颜色和字体。
+    *   `window.update_interval`: **价格信息**的主要更新间隔（秒）。
+    *   `fear_greed_source.url`: 获取恐惧贪婪指数的网页 URL。
+    *   `fear_greed_source.update_interval`: **恐惧贪婪指数**的更新间隔（秒）。
+*   **`user_tokens.json`** (位于用户数据目录): 存储用户管理的代币列表和显示模式。
+*   **`.env`**: (不再必需) 如果存在，`python-dotenv` 仍会尝试加载，但当前代码不使用其中的变量。
 
-如果你想将程序打包成单个 `.exe` 文件，可以使用项目中的 `build_exe.bat` 脚本（需要先安装 PyInstaller: `pip install pyinstaller`）。
+## 打包说明 (使用 PyInstaller)
 
-## 许可证
+如果你想将脚本打包成单个可执行文件（`.exe`），可以使用 PyInstaller。
 
-本项目采用 MIT 许可证。详情请见 `LICENSE` 文件。 
+1.  安装 PyInstaller: `pip install pyinstaller`
+2.  确保你的工作目录是包含 `BeraHelper.py` 的 **上一级** 目录。
+3.  运行 PyInstaller 命令（示例适用于 Windows，注意移除 `.env` 相关部分）：
+
+    ```bash
+    pyinstaller --noconfirm --onedir --windowed --icon "BeraHelper/bera.ico" ^
+    --add-data "BeraHelper/bera.ico;BeraHelper/" ^
+    --add-data "BeraHelper/bera_helper_config.json;BeraHelper/" ^
+    --add-data "BeraHelper/coingecko.list;BeraHelper/" ^
+    --hidden-import "PySide6.QtSvg" ^
+    --hidden-import "PySide6.QtNetwork" ^
+    "BeraHelper/BeraHelper.py"
+    ```
+    *   **注意:** Linux/macOS 请调整路径分隔符和续行符。
+    *   可以在 `dist/BeraHelper` 目录中创建快捷方式，并在目标后添加 `--log-level INFO` 等参数控制默认日志级别。
+
+4.  打包完成后，生成的文件会在 `dist/BeraHelper` 目录下。
+
+## 注意事项
+
+*   **恐惧与贪婪指数获取**: 当前实现依赖于抓取 CoinMarketCap 网页，并根据数值手动分类。如果网站更改 HTML 结构，抓取可能失败。
+*   **CoinGecko API**: 价格数据依赖 CoinGecko 的免费 API。
+*   **用户数据目录**: `user_tokens.json` 和日志文件存储在用户特定的数据目录或程序所在目录。
+*   **日志文件**: 程序会在日志目录下生成日志文件，级别可通过 `--log-level` 控制。 

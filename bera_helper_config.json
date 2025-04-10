@@ -17,20 +17,9 @@
   "window": {
     "update_interval": 60
   },
-  "api": {
-    "coinmarketcap": {
-      "enabled": true,
-      "base_url": "https://pro-api.coinmarketcap.com/v3",
-      "endpoints": {
-        "fear_greed": "/fear-and-greed/historical"
-      },
-      "params": {
-        "fear_greed": {
-          "start": 1,
-          "limit": 1
-        }
-      },
-      "update_interval": 3600
-    }
+  "api": {},
+  "fear_greed_source": {
+    "url": "https://coinmarketcap.com/charts/fear-and-greed-index/",
+    "update_interval": 3600
   }
 }

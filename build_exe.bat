@@ -99,24 +99,12 @@ if not exist %PYTHON_EXE% ( echo ERROR: Python executable not found at %PYTHON_E
 if not exist "%SCRIPT_FILE%" ( echo ERROR: Script file not found: %SCRIPT_FILE% & goto :error )
 if not exist "%ICON_FILE%" ( echo WARNING: Icon file not found: %ICON_FILE%. Building without icon. & set ICON_OPTION= ) else ( echo Icon found. & set ICON_OPTION=--icon="%ICON_FILE%" )
 
-rem 检查.env文件是否存在
-if not exist ".env" (
-    echo WARNING: .env file not found in current directory!
-    echo If you need the .env file in your packaged app, please create it first.
-    pause
-    set ENV_OPTION=
-) else (
-    echo .env file found, will be included in package.
-    set ENV_OPTION=--add-data ".env";"."
-)
-
 echo Running PyInstaller...
 %PYTHON_EXE% -m PyInstaller ^
     --name %OUTPUT_NAME% ^
     --onefile ^
     --windowed ^
     %ICON_OPTION% ^
-    %ENV_OPTION% ^
     --add-data "%ICON_FILE%";"." ^
     --add-data "%CONFIG_FILE%";"." ^
     --add-data "%TOKEN_LIST_FILE%";"." ^

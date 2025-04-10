@@ -12,6 +12,10 @@ import winreg as reg
 import copy # <--- 添加导入
 from PySide6.QtGui import QCloseEvent # Import QCloseEvent for closeEvent override
 import traceback # Ensure traceback is imported
+import re # 导入正则表达式库
+from bs4 import BeautifulSoup # 导入 BeautifulSoup
+from queue import Queue # 添加 Queue 用于线程间通信
+import argparse # 导入 argparse
 
 # 导入PySide6库中的Qt组件，用于创建图形用户界面
 from PySide6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, 
@@ -44,8 +48,21 @@ else:
 # 日志配置
 # ===================================
 
-def setup_logger():
+def setup_logger(log_level_str='INFO'): # 添加参数并设置默认值
     """配置日志记录器，用于记录程序运行过程中的信息"""
+
+    # 将字符串级别转换为 logging 级别常量
+    log_level_str_upper = log_level_str.upper()
+    log_levels = {
+        'DEBUG': logging.DEBUG,
+        'INFO': logging.INFO,
+        'WARNING': logging.WARNING,
+        'ERROR': logging.ERROR,
+        'CRITICAL': logging.CRITICAL
+    }
+    log_level = log_levels.get(log_level_str_upper, logging.INFO) # 获取级别，无效则默认为 INFO
+    print(f"Attempting to set log level to: {log_level_str_upper} -> {log_level}") # 早期打印，用于调试
+
     try: # 保留 try-except 结构
         log_dir_base = None
         try:
@@ -88,7 +105,7 @@ def setup_logger():
 
             # 配置根日志记录器
             logging.basicConfig(
-                level=logging.DEBUG, # <-- 保留 DEBUG 级别
+                level=log_level, # <-- 使用传入的日志级别
                 format=log_format,
                 datefmt=date_format,
                 handlers=[
@@ -123,8 +140,8 @@ def setup_logger():
         # 捕获 setup_logger 内部未能捕获的任何意外错误
         print(f"CRITICAL ERROR during logger setup: {outer_e}")
 
-# 初始化日志系统
-setup_logger()
+# 初始化日志系统 - 不在这里调用，移到 main 函数
+# setup_logger()
 
 # ===================================
 # 工具函数
@@ -264,8 +281,11 @@ class BeraHelperApp(QMainWindow):
         self.initial_data_ready.connect(self.handle_initial_data) # 连接新信号
         
         # 创建更新定时器 (先创建，但不在这里启动)
-        self.timer = QTimer(self)
-        self.timer.timeout.connect(self.fetch_data)
+        self.timer = QTimer(self) # 主定时器 (价格)
+        self.timer.timeout.connect(self.fetch_data) # 连接到价格获取
+        # --- 新增：恐惧贪婪指数定时器 ---
+        self.fear_greed_timer = QTimer(self) # F&G 定时器
+        self.fear_greed_timer.timeout.connect(self.fetch_fear_greed_data) # 连接到 F&G 获取
         
         # 设置窗口置顶
         self.setWindowFlag(Qt.WindowStaysOnTopHint, True)  # 设置窗口置顶标志
@@ -288,36 +308,57 @@ class BeraHelperApp(QMainWindow):
         initial_fetch_thread.start()
 
     def _initial_fetch_thread(self):
-        """在后台线程中执行首次数据获取"""
+        """在后台线程中执行首次数据获取 (价格和F&G并行)"""
         logging.info("Initial data fetch thread started execution...") # Changed to English
         price_data = None
         fear_greed_data = None
-        current_time = datetime.now().strftime("%H:%M:%S")
+        current_time = datetime.now().strftime("%H:%M:%S") # 初始时间戳
+
+        price_queue = Queue()
+        fg_queue = Queue()
+
+        # 创建并启动获取价格的线程
+        price_thread = Thread(target=lambda q: q.put(self.get_prices()), args=(price_queue,), daemon=True)
+        price_thread.start()
+        logging.debug("Initial price fetch thread started.")
+
+        # 创建并启动获取F&G的线程
+        fg_thread = Thread(target=lambda q: q.put(self.get_fear_greed_index()), args=(fg_queue,), daemon=True)
+        fg_thread.start()
+        logging.debug("Initial F&G fetch thread started.")
+
+        # 等待两个线程完成（设置超时）
+        price_thread.join(timeout=25) # 增加超时
+        fg_thread.join(timeout=25) # 增加超时
+        logging.debug("Initial fetch threads join finished or timed out.")
+
+        # 从队列获取结果
         try:
-            # 获取价格数据
-            price_data = self.get_prices()
-
-            # 获取恐惧贪婪指数
-            fear_greed_data = self.get_fear_greed_index(force_update=True) # 强制更新
-
-            logging.info("Initial data fetch thread completed") # Changed to English
-
+            price_data = price_queue.get_nowait() if not price_queue.empty() else None
+            logging.info(f"Initial price fetch result: {'Success' if price_data is not None else 'Failure/Timeout'}")
         except Exception as e:
-            logging.error(f"Initial data fetch thread failed: {e}") # Changed to English
-            import traceback
-            logging.error(traceback.format_exc())
-            # 即使失败，也发送信号，让主线程知道
+            logging.error(f"Error getting price data from queue: {e}")
+            price_data = None
+
+        try:
+            fear_greed_data = fg_queue.get_nowait() if not fg_queue.empty() else None
+            logging.info(f"Initial F&G fetch result: {'Success' if fear_greed_data is not None else 'Failure/Timeout'}")
+        except Exception as e:
+            logging.error(f"Error getting F&G data from queue: {e}")
+            fear_greed_data = None
+
         finally:
             # 使用信号将结果传递回主线程
+            logging.debug("Emitting initial_data_ready signal.")
             self.initial_data_ready.emit(price_data, fear_greed_data, current_time)
 
     @Slot(object, object, str)
     def handle_initial_data(self, price_data, fear_greed_data, current_time):
         """处理后台线程返回的首次数据，更新UI并启动定时器"""
-        logging.info("Received initial data, preparing to update UI and start timer") # Changed to English
+        logging.info("Received initial data, preparing to update UI and start timers") # Changed log
         self.price_data = price_data
         self.fear_greed_data = fear_greed_data
-        self.current_time = current_time
+        self.current_time = current_time # 使用初始获取时的时间戳
 
         # 检查获取的数据是否有效
         if self.price_data is None or not self.price_data:
@@ -334,9 +375,12 @@ class BeraHelperApp(QMainWindow):
         # 更新 UI (会使用 self.price_data 和 self.fear_greed_data)
         self.update_ui()
 
-        # --- 在首次数据获取完成后再启动定时器 ---
-        self.timer.start(self.update_interval * 1000)
-        logging.info(f"Initial data display complete, update timer started, interval: {self.update_interval} seconds") # Changed to English
+        # --- 在首次数据获取完成后再启动定时器 --- 
+        self.timer.start(self.update_interval * 1000) # 启动主价格定时器
+        logging.info(f"Initial data display complete, price update timer started, interval: {self.update_interval} seconds") # Changed to English
+        # --- 启动 F&G 定时器 --- 
+        self.fear_greed_timer.start(self.fear_greed_update_interval * 1000)
+        logging.info(f"Fear & Greed update timer started, interval: {self.fear_greed_update_interval} seconds")
 
     def init_variables(self):
         """初始化变量和状态"""
@@ -344,10 +388,10 @@ class BeraHelperApp(QMainWindow):
         load_dotenv(resource_path('.env'))  # 从.env文件加载环境变量
 
         # 初始化恐惧指数缓存和数据缓存
-        self.fear_greed_cache = None  # 恐惧贪婪指数缓存
-        self.fear_greed_last_update = None  # 恐惧贪婪指数最后更新时间
-        self.fear_greed_lock = Lock()  # 创建线程锁，用于保护恐惧贪婪指数数据
-        self.fear_greed_data = None  # 恐惧贪婪指数数据
+        # self.fear_greed_cache = None  # 不再需要缓存
+        # self.fear_greed_last_update = None  # 不再需要缓存时间戳
+        self.fear_greed_lock = Lock()  # 创建线程锁，用于保护恐惧贪婪指数抓取过程
+        self.fear_greed_data = None  # 恐惧贪婪指数数据 (用于UI显示)
         self.price_data = None  # 价格数据
         self.current_time = None  # 当前时间
         
@@ -441,13 +485,13 @@ class BeraHelperApp(QMainWindow):
                      logging.error(f"Error loading configuration file: {load_err}. Will use default configuration.") # Changed to English
                      # 保留上面定义的默认 config 结构
 
-            # --- 字体设置 ---
+            # --- 字体设置 --- 
             styles_config = config.get('styles', {})
             font_config = styles_config.get('FONT_NORMAL', ['Arial', 11])
             self.app_font = QFont(font_config[0], font_config[1])
             logging.debug(f'Configured font: {font_config[0]}, size: {font_config[1]}') # Changed to English
 
-            # --- 代币ID配置 (从配置文件加载，提供默认值) ---
+            # --- 代币ID配置 (从配置文件加载，提供默认值) --- 
             tokens_config = config.get('tokens', {})
             self.BERA_ID = tokens_config.get('BERA_ID', "berachain-bera")
             self.IBGT_ID = tokens_config.get('IBGT_ID', "infrafred-bgt")
@@ -455,6 +499,15 @@ class BeraHelperApp(QMainWindow):
             self.ETH_ID = tokens_config.get('ETH_ID', "ethereum")
             # XBERA_ID, XBGT_ID 不再是特殊变量，用户需要在 user_tokens.json 中添加它们
 
+            # --- 提前读取窗口和 F&G 更新间隔配置 --- 
+            self.update_interval = config.get('window', {}).get('update_interval', 60)
+            fg_config = config.get('fear_greed_source', {})
+            self.fear_greed_url = fg_config.get('url', "https://coinmarketcap.com/charts/fear-and-greed-index/")
+            self.fear_greed_update_interval = fg_config.get('update_interval', 900)
+            logging.info(f"Price update interval: {self.update_interval} seconds")
+            logging.info(f"Fear & Greed source URL: {self.fear_greed_url}")
+            logging.info(f"Fear & Greed update interval: {self.fear_greed_update_interval} seconds")
+            
             # --- 不再需要 RELEVANT_BERA_TOKENS 集合 ---
             # self.RELEVANT_BERA_TOKENS = {...} # 删除或注释掉这部分
 
@@ -524,10 +577,17 @@ class BeraHelperApp(QMainWindow):
                     try: self.save_user_tokens()
                     except Exception as save_e: logging.error(f"Failed to save default token list for the first time: {save_e}") # Changed to English
 
-            # --- 加载其他配置 (保持不变) ---
+            # --- 加载其他配置 (部分已提前) --- 
             self.load_available_tokens()
-            self.update_interval = config.get('window', {}).get('update_interval', 60)
-            self.api_config = config.get('api', {})
+            # self.update_interval = config.get('window', {}).get('update_interval', 60) # 已提前
+            # self.api_config = config.get('api', {}) # 不再需要API配置
+            # --- 新增：读取 F&G 配置 --- 
+            # fg_config = config.get('fear_greed_source', {}) # 已提前
+            # self.fear_greed_url = fg_config.get('url', "https://coinmarketcap.com/charts/fear-and-greed-index/") # 提供默认URL # 已提前
+            # self.fear_greed_update_interval = fg_config.get('update_interval', 900) # 提供默认间隔 # 已提前
+            # logging.info(f"Fear & Greed source URL: {self.fear_greed_url}") # 已提前
+            # logging.info(f"Fear & Greed update interval: {self.fear_greed_update_interval} seconds") # 已提前
+            
             self.up_color = QColor(styles_config.get('UP_COLOR', "#00FF7F"))
             self.down_color = QColor(styles_config.get('DOWN_COLOR', "#FF4500"))
             self.text_color = QColor(styles_config.get('TEXT_COLOR', "#FFD700"))
@@ -1063,121 +1123,184 @@ class BeraHelperApp(QMainWindow):
             logging.error(traceback.format_exc())
             return {}
 
-    def get_fear_greed_index(self, force_update=False):
-        """从 CoinMarketCap API 获取恐惧和贪婪指数，缓存逻辑基于隔日8点更新"""
-        with self.fear_greed_lock:
+    def get_fear_greed_index(self): # 移除 force_update 参数
+        """从 CoinMarketCap 网页抓取恐惧和贪婪指数 (无缓存)"""
+        with self.fear_greed_lock: # 锁保护抓取过程
             now = datetime.now()
-            should_fetch = False
-            reason = ""
+            # --- 移除缓存检查逻辑 ---
+            # should_fetch = False
+            # reason = ""
+            # ... (移除 should_fetch 计算逻辑) ...
+            # logging.debug(f'Checking if new index is needed: {should_fetch}. Reason: {reason}')
+            # if not should_fetch:
+            #     logging.debug('Using cached Fear & Greed index data')
+            #     return self.fear_greed_cache
 
-            if force_update:
-                should_fetch = True
-                reason = "Force update requested" # Changed to English
-            elif self.fear_greed_cache is None or self.fear_greed_last_update is None:
-                should_fetch = True
-                reason = "Cache is empty or no timestamp" # Changed to English
-            else:
-                # 计算下次应该更新的时间点：上次更新日期的第二天早上8点
-                last_update_date = self.fear_greed_last_update.date()
-                next_day_date = last_update_date + timedelta(days=1)
-                # 使用 datetime.combine 确保时间是准确的 8:00:00
-                target_update_datetime = datetime.combine(next_day_date, datetime.min.time().replace(hour=8))
+            # --- 总是尝试获取 --- 
+            logging.info('Attempting to fetch new Fear & Greed index data via scraping...') # Restored log message
+            url = "https://coinmarketcap.com/charts/fear-and-greed-index/"
+            headers = {
+                # 模拟浏览器访问，否则可能被阻止
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+            }
 
-                if now >= target_update_datetime:
-                    should_fetch = True
-                    reason = f"Current time {now.strftime('%Y-%m-%d %H:%M')} >= Target update time {target_update_datetime.strftime('%Y-%m-%d %H:%M')}" # Changed to English
-                else:
-                    reason = f"Current time {now.strftime('%Y-%m-%d %H:%M')} < Target update time {target_update_datetime.strftime('%Y-%m-%d %H:%M')}" # Changed to English
-
-            logging.debug(f'Checking if new index is needed: {should_fetch}. Reason: {reason}')
-
-            if not should_fetch:
-                logging.debug('Using cached Fear & Greed index data')
-                return self.fear_greed_cache
-
-            # --- 如果需要获取，则执行以下代码 ---
-            logging.info('Attempting to fetch new Fear & Greed index data...')
             try:
-                if not self.api_config.get('coinmarketcap', {}).get('enabled', False): # 更安全的检查
-                    logging.warning('CoinMarketCap API is not enabled') # Changed to English
-                    return self.fear_greed_cache # 获取失败时返回旧缓存
+                response = requests.get(url, headers=headers, timeout=15) # Increased timeout slightly
+                response.raise_for_status() # 如果请求失败则抛出异常
 
-                api_key = os.getenv('CMC_API_KEY')
-                if not api_key:
-                    logging.error('CoinMarketCap API key not found') # Changed to English
-                    return self.fear_greed_cache # 获取失败时返回旧缓存
+                soup = BeautifulSoup(response.text, 'html.parser')
 
-                # API 请求部分保持不变
-                url = f"{self.api_config['coinmarketcap']['base_url']}{self.api_config['coinmarketcap']['endpoints']['fear_greed']}"
-                headers = {'X-CMC_PRO_API_KEY': api_key}
-                params = self.api_config['coinmarketcap']['params']['fear_greed']
+                # --- Log HTML for debugging ---
+                logging.debug(f"--- Start HTML Snippet for Debugging ---")
+                # Log a portion of the HTML (e.g., first 2000 chars)
+                html_snippet = response.text[:2000]
+                logging.debug(html_snippet)
+                logging.debug(f"--- End HTML Snippet ---")
 
-                logging.debug(f'Requesting Fear & Greed index: {url}') # Changed to English
-                response = requests.get(url, headers=headers, params=params, timeout=10) # 添加超时
+                # --- 定位元素 ---
+                # !!! 注意：网页结构可能会改变，下面的 CSS 选择器需要根据实际情况调整 !!!
+                index_selector = "span[data-test='fear-greed-index-num']" # 更新的选择器
+                # classification_selector = "div[class*='classification']" # 不再需要抓取分类
 
-                if response.status_code == 200:
-                    data = response.json()
-                    if 'data' in data and len(data['data']) > 0:
-                        new_data = data['data'][0]
-                        self.fear_greed_cache = new_data
-                        self.fear_greed_last_update = now # 使用当前的获取时间作为下次判断的基准
-                        logging.info(f'Fear & Greed index updated successfully: {self.fear_greed_cache["value"]} ({self.fear_greed_cache["value_classification"]})') # Changed to English
-                        return self.fear_greed_cache
+                logging.debug(f"Attempting to select index element with selector: '{index_selector}'")
+                index_element = soup.select_one(index_selector) # 使用存储的选择器
+
+                # logging.debug(f"Attempting to select classification element with selector: '{classification_selector}'") # 不再需要
+                # classification_element = soup.select_one(classification_selector) # 不再需要
+
+                if index_element:
+                    index_text = index_element.get_text(strip=True)
+                    # 提取数字部分
+                    match = re.search(r'(\d+)', index_text)
+                    if match:
+                        index_value = int(match.group(1))
+                        classification_text = "Unknown" # Default value
+
+                        # --- 手动根据数值划分分类 ---
+                        if 0 <= index_value <= 24:
+                            classification_text = "Extreme Fear"
+                        elif 25 <= index_value <= 49:
+                            classification_text = "Fear"
+                        elif 50 <= index_value <= 54:
+                            classification_text = "Neutral"
+                        elif 55 <= index_value <= 74:
+                            classification_text = "Greed"
+                        elif 75 <= index_value <= 100:
+                            classification_text = "Extreme Greed"
+                        else:
+                             logging.warning(f"Scraped index value {index_value} is outside the expected 0-100 range.")
+
+                        # # Check if classification element was found *before* trying to use it # 不再需要
+                        # if classification_element:
+                        #     classification_text = classification_element.get_text(strip=True)
+                        # else:
+                        #     logging.warning(f"Scraping Warning: Found index value but NOT classification element (selector: '{classification_selector}'). Setting classification to 'Unknown'.")
+                        #     classification_text = "Unknown"
+
+                        # 创建符合缓存格式的数据
+                        new_data = {
+                            'value': index_value,
+                            'value_classification': classification_text, # 使用手动确定的分类
+                            'timestamp': now.isoformat() # 使用当前时间作为时间戳
+                        }
+                        # self.fear_greed_cache = new_data # 不再更新缓存
+                        # self.fear_greed_last_update = now # 不再更新时间戳
+                        logging.info(f'Fear & Greed index scraped successfully: {index_value} ({classification_text})')
+                        return new_data # 直接返回新数据
                     else:
-                        logging.warning('Fear & Greed index API returned empty data') # Changed to English
-                        return self.fear_greed_cache # 获取失败时返回旧缓存
+                        logging.error(f"Scraping Error: Could not extract number from text '{index_text}'. Index element found with selector '{index_selector}'") # Changed to English
+                        return None # 返回 None 表示失败
                 else:
-                    logging.error(f'Failed to fetch Fear & Greed index: HTTP {response.status_code}')
-                    logging.debug(f'Error response: {response.text}')
-                    return self.fear_greed_cache # 获取失败时返回旧缓存
+                    # --- 更详细的错误日志 ---
+                    logging.error(f"Scraping Error: Could not find fear & greed index element using selector '{index_selector}'. CSS selector might need update.") # Changed to English
+                    # if not classification_element: # 不再需要检查分类元素
+                    #      logging.error(f"Scraping Error: Also could not find classification element using selector '{classification_selector}'.")
+                    # 可以取消注释下面这行来帮助调试
+                    # logging.debug(f"HTML sample: {soup.prettify()[:2000]}") # Using prettify for better readability
+                    return None # 返回 None 表示失败
 
-            except requests.RequestException as e:
-                 logging.error(f'Network error while requesting Fear & Greed index: {e}')
-                 return self.fear_greed_cache # 获取失败时返回旧缓存
+            except requests.exceptions.RequestException as e:
+                 logging.error(f'Scraping Error: Request failed - {e}')
+                 return None # 返回 None 表示失败
             except Exception as e:
-                logging.error(f'Error fetching Fear & Greed index: {e}')
+                logging.error(f'Scraping Error: Parsing process failed - {e}')
                 import traceback
                 logging.error(traceback.format_exc())
-                return self.fear_greed_cache # 获取失败时返回旧缓存
+                return None # 返回 None 表示失败
 
     @Slot()
     def fetch_data(self):
-        """获取数据（在单独线程中执行）"""
+        """获取价格数据（在单独线程中执行）"""
         Thread(target=self._fetch_data_thread, daemon=True).start()
+
+    # --- 新增：获取恐惧贪婪指数的槽函数 ---
+    @Slot()
+    def fetch_fear_greed_data(self):
+        """获取恐惧贪婪指数数据（在单独线程中执行）"""
+        Thread(target=self._fetch_fear_greed_thread, daemon=True).start()
     
     def _fetch_data_thread(self):
-        """在线程中获取数据"""
+        """在线程中获取价格数据"""
         try:
-            logging.debug('Starting data fetch...') # Changed to English
+            logging.debug('Starting price data fetch...') # Changed log
 
             # 获取价格数据
             price_data = self.get_prices()
 
-            # --- 简化: 直接调用 get_fear_greed_index ---
-            fear_greed_data = self.get_fear_greed_index() # 不再需要 force_update
+            # --- 不再在此获取 F&G 数据 ---
+            # fear_greed_data = self.get_fear_greed_index()
 
-            # 存储数据以供UI更新 (fear_greed_data 可能是来自缓存或新获取的)
-            self.price_data = price_data
-            with self.fear_greed_lock:
-                self.fear_greed_data = fear_greed_data # 更新 UI 使用的数据
-            self.current_time = datetime.now().strftime("%H:%M:%S")
-
-            # 触发UI更新信号
-            logging.debug('Emitting UI update signal') # Changed to English
-            self.data_updated.emit()
+            # 存储数据以供UI更新
+            if price_data: # 只有成功获取才更新
+                self.price_data = price_data
+                self.current_time = datetime.now().strftime("%H:%M:%S") # 更新价格的时间戳
+                # 触发UI更新信号 (只更新价格和时间)
+                logging.debug('Emitting UI update signal (price data updated)') # Changed log
+                self.data_updated.emit() # 触发UI更新
+            else:
+                logging.warning("Price data fetch failed, UI will not be updated for prices.")
 
         except Exception as e:
-            logging.error(f"Data fetch error: {e}") # Changed to English
+            logging.error(f"Price data fetch error: {e}") # Changed log
             import traceback
             logging.error(traceback.format_exc())
-    
+
+    # --- 新增：获取恐惧贪婪指数的线程函数 ---
+    def _fetch_fear_greed_thread(self):
+        """在线程中获取恐惧贪婪指数数据"""
+        try:
+            logging.debug('Starting Fear & Greed data fetch...')
+            fear_greed_data = self.get_fear_greed_index()
+
+            if fear_greed_data is not None:
+                # 更新 F&G 数据
+                self.fear_greed_data = fear_greed_data
+                # 注意：不在这里更新 self.current_time，因为它反映的是价格更新时间
+
+                # 触发UI更新信号 (只更新 F&G)
+                logging.debug('Emitting UI update signal (F&G data updated)')
+                self.data_updated.emit() # 触发UI更新
+            else:
+                logging.warning("Fear & Greed data fetch failed, UI will not be updated for F&G.")
+
+        except Exception as e:
+            logging.error(f"Fear & Greed data fetch error: {e}")
+            import traceback
+            logging.error(traceback.format_exc())
+
     @Slot()
     def update_ui(self):
         """更新UI显示 (支持美元价格和BERA比率模式)"""
         try:
-            self.time_label.setText(f"Last Updated: {self.current_time}")
+            # --- 更新时间标签（显示价格的最后更新时间）---
+            if hasattr(self, 'current_time') and self.current_time:
+                self.time_label.setText(f"Last Updated: {self.current_time}")
+            # else: # Optional: Handle case where time is not yet set
+            #     self.time_label.setText("Last Updated: --:--:--")
+
             logging.debug("Executing update_ui") # Changed to English
 
+            # --- 更新价格显示 (逻辑不变，但数据来源是 self.price_data) ---
             if hasattr(self, 'price_data') and self.price_data:
                 bera_price_usd = None
                 if self.BERA_ID in self.price_data and "usd" in self.price_data[self.BERA_ID]:
@@ -1252,15 +1375,16 @@ class BeraHelperApp(QMainWindow):
                             if token_id in self.token_widgets: self.token_widgets[token_id].update_price("$Error$", "--.--%")
                         except Exception: pass
             else:
+                # 如果没有价格数据，也显示默认值
                 for token_id, widget in self.token_widgets.items(): widget.update_price("$--.--", "--.--%")
-                logging.warning("update_ui: No price data available") # Changed to English
+                # logging.warning("update_ui: No price data available") # Keep or remove this log
 
+            # --- 更新恐惧贪婪指数显示 (逻辑不变，但数据来源是 self.fear_greed_data) ---
             self.update_fear_greed_display()
 
         except Exception as e:
             logging.error(f"Error updating UI: {e}")
-            import traceback; logging.error(traceback.format_exc())
-    
+
     def update_fear_greed_display(self):
         """更新恐惧和贪婪指数显示"""
         if not hasattr(self, 'fear_greed_data') or not self.fear_greed_data:
@@ -1912,6 +2036,30 @@ class BeraHelperApp(QMainWindow):
 
 def main():
     """主程序入口"""
+
+    # --- 1. 解析命令行参数 --- 
+    parser = argparse.ArgumentParser(description='Bera Helper - Crypto Price Monitor')
+    parser.add_argument(
+        '--log-level',
+        type=str,
+        default='INFO',
+        choices=['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'],
+        help='Set the logging level (default: INFO)'
+    )
+    # 添加其他可能需要的参数...
+    parser.add_argument('--minimized', action='store_true', help='Start minimized (intended for autostart)')
+    parser.add_argument('--no-splash', action='store_true', help='Disable splash screen (if implemented)')
+    parser.add_argument('--no-log', action='store_true', help='Placeholder for compatibility with autostart entry, does nothing currently.')
+
+
+    args = parser.parse_args()
+
+    # --- 2. 初始化日志系统，传入日志级别 --- 
+    # 注意：日志系统现在依赖于命令行参数，必须在解析后初始化
+    setup_logger(args.log_level)
+
+    # --- 后续代码保持不变 --- 
+
     # 检测运行环境
     is_packaged = getattr(sys, "frozen", False) and hasattr(sys, "_MEIPASS")
     logging.info(f"Application starting - {'Packaged environment' if is_packaged else 'Development environment'}") # Changed log
