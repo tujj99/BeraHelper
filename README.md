@@ -1,7 +1,4 @@
 ![image](https://github.com/user-attachments/assets/2eed6910-b9c1-48ec-ab1e-9377b1d6adc9)
-![image](https://github.com/user-attachments/assets/a60e9085-5305-4859-a27e-f54779e80f23)
-
-
 
 # Bera Helper - Crypto Price Monitor
 
