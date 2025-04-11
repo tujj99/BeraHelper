@@ -1387,7 +1387,15 @@ class BeraHelperApp(QMainWindow):
 
     def update_fear_greed_display(self):
         """更新恐惧和贪婪指数显示"""
+        # --- ADD LOGGING ---
+        fg_data_for_update = getattr(self, 'fear_greed_data', 'Attribute not set')
+        logging.debug(f"update_fear_greed_display called. Current self.fear_greed_data: {fg_data_for_update}")
+        # --- END LOGGING ---
+
         if not hasattr(self, 'fear_greed_data') or not self.fear_greed_data:
+            # --- ADD LOGGING ---
+            logging.warning("update_fear_greed_display: self.fear_greed_data is missing or falsy. Displaying 'Unknown'.")
+            # --- END LOGGING ---
             self.fear_greed_value.setText(" --")
             self.fear_greed_class.setText("(Unknown)")
             self.fear_greed_time.setText("")
@@ -1398,15 +1406,17 @@ class BeraHelperApp(QMainWindow):
             value = int(fear_greed_data['value'])
             classification_raw = fear_greed_data['value_classification']
 
-            # --- Translate Classification ---
-            classification_map = {
-                "Extreme fear": "Extreme Fear",
-                "Fear": "Fear",
-                "Neutral": "Neutral",
-                "Greed": "Greed",
-                "Extreme greed": "Extreme Greed"
-            }
-            classification = classification_map.get(classification_raw, "Unknown") # Default to Unknown if not found
+            # --- Remove Redundant Classification Map ---
+            # classification_map = {
+            #     "Extreme fear": "Extreme Fear",
+            #     "Fear": "Fear",
+            #     "Neutral": "Neutral",
+            #     "Greed": "Greed",
+            #     "Extreme greed": "Extreme Greed"
+            # }
+            # classification = classification_map.get(classification_raw, "Unknown") # Default to Unknown if not found
+            classification = classification_raw # Directly use the value from get_fear_greed_index
+            # --- End Removal ---
 
             # 处理时间戳
             timestamp = fear_greed_data.get('timestamp', '')
